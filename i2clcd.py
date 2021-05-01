@@ -1,5 +1,6 @@
 import i2c
 import streams
+import __builtins__
 
 # I2C byte:   [H ------------------------ L]
 #             [  bit dati  ] [bit controllo]
@@ -243,17 +244,18 @@ class I2CLCD():
     def printLine(self, text, row = 0, align='LEFT', delay = 0):
         #Stampa text come frase intera sull'LCD, andando a capo automaticamente.
 
-        #text:   bytes or str object, str object will be encoded with ASCII
-        #row:   row number is zero-based
-        #align:  could be 'LEFT' | 'L' (default), 'RIGHT' | 'R' or 'CENTER' | 'CENTRE' | 'C'
+        #text:      bytes or str object, str object will be encoded with ASCII
+        #row:       row number is zero-based
+        #align:     could be 'LEFT' | 'L' (default), 'RIGHT' | 'R' or 'CENTER' | 'CENTRE' | 'C'
         
         strLen = len(text)
         rowsToPrint = round(strLen/self.nCols)
         
         for x in range (rowsToPrint):
-            currentLine = text[:self.nCols].strip()
             
+            currentLine = text[:self.nCols].strip()
             whitespace = self.nCols - strLen
+            __builtins__.print("currentLine = " + currentLine)
             
             if align == 'LEFT' or align == 'L':
                 currentLine = currentLine + b' ' * whitespace
@@ -263,8 +265,9 @@ class I2CLCD():
                 currentLine = b' ' * (whitespace // 2) + currentLine + b' ' * (whitespace // 2)
             
             #self.sendByte(LCD_ROWS[(x+row) % self.nRows], RSmode_CMD)
-            self.moveCursor(self.cursorPos[0], (x+row) % self.nRows)
+            self.moveCursor(0, (x+row) % self.nRows)
+            __builtins__.print("moved cursor to :  " + str(self.cursorPos[0]) + ",  " + str((x+row) % self.nRows))
             self.print(currentLine, delay)
             text = text[self.nCols:].strip()
         
-        self.moveCursor(strLen % self.nCols, strLen//self.nCols + (row % self.nRows))
+        #self.moveCursor(strLen % self.nCols, strLen//self.nCols + (row % self.nRows))

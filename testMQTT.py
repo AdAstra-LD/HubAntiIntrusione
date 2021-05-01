@@ -10,7 +10,7 @@ from wireless import wifi
 from mqtt import mqtt
 
 #import the actual net driver for the specific board 
-from from espressif.esp32net import esp32wifi as wifi_driver
+from espressif.esp32net import esp32wifi as wifi_driver
 
 streams.serial()
 
@@ -39,9 +39,7 @@ try:
         except Exception as e:
             print("connecting to mosquitto...")
     print("connected to mosquitto.")
+except Exception as e:
+    print("zoccola")
     
-    client.publish("stanza/sensore", 21, 2)
-    
-        
-    
-    
+client.publish("stanza/sensore", 21, 2)
