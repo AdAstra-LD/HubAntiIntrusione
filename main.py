@@ -7,8 +7,8 @@ import threading
 import adc
 import pwm
 import i2c
-import i2clcd
-import specialChars
+import i2clcd as display
+import specialChars as chars
 
 pinAlarmLed = D0    
 pinEnableLed = D15
@@ -30,7 +30,7 @@ def initIO():
     i2cObj = i2c.I2C(I2C2, addr=0x27, clock=100000)
     i2cObj.start()
     
-    lcd = i2clcd.I2CLCD(i2cObj, lcd_cols=16, lcd_rows=2)
+    lcd = display.I2CLCD(i2cObj, lcd_cols=16, lcd_rows=2)
     lcd.prepare()
     
     pinMode(pinAlarmLed, OUTPUT)
@@ -43,10 +43,10 @@ def initIO():
     digitalWrite(pinEnableLed, LOW)
     digitalWrite(pinAlarmLed, LOW)
     
-    lcd.writeCGRAM(specialChars.SMILEY_FACE, 0)
-    lcd.writeCGRAM(specialChars.SAD_FACE, 1)
-    lcd.writeCGRAM(specialChars.POKER_FACE, 2)
-    lcd.writeCGRAM(specialChars.BIG_EXCLAMATION, 3)
+    lcd.writeCGRAM(chars.SMILEY_FACE, 0)
+    lcd.writeCGRAM(chars.SAD_FACE, 1)
+    lcd.writeCGRAM(chars.POKER_FACE, 2)
+    lcd.writeCGRAM(chars.BIG_EXCLAMATION, 3)
     
     print("Sistema pronto.")
     sleep(1250)
@@ -57,8 +57,14 @@ def initIO():
     
     lcd.printLine("si chiama", 0, align = "L", delay = 60)
     lcd.printLine("Alessandro", 1, align = "L", delay = 60)
+    
+    print(lcd.cursorPos)
+    
     lcd.shift()
-    lcd.print(i2clcd.CGRAM_CHAR[2])
+    
+    print(lcd.cursorPos)
+    
+    lcd.print(display.CGRAM_CHAR[2])
     sleep(1250)
     lcd.clear()
     lcd.printLine("Wa, non ci credo Ho indovinato?", 0, align = "L", delay = 60)
@@ -78,7 +84,7 @@ def toggleOnOff():
     lcd.clear()
 
     if (abilitato):
-        lcd.printAt(lcd.nCols-1, 0, i2clcd.CGRAM_CHAR[3])
+        lcd.printAt(lcd.nCols-1, 0, display.CGRAM_CHAR[3])
         print("Sistema abilitato")
     else:
         stopAlarm()

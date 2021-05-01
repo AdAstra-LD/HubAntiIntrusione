@@ -1,6 +1,6 @@
 import i2c
 import streams
-import __builtins__
+#import __builtins__
 
 # I2C byte:   [H ------------------------ L]
 #             [  bit dati  ] [bit controllo]
@@ -255,7 +255,8 @@ class I2CLCD():
             
             currentLine = text[:self.nCols].strip()
             whitespace = self.nCols - strLen
-            __builtins__.print("currentLine = " + currentLine)
+            #__builtins__.print("currentLine = " + currentLine)
+            #__builtins__.print("la stringa da stampare è lunga " + str(len(currentLine)))
             
             if align == 'LEFT' or align == 'L':
                 currentLine = currentLine + b' ' * whitespace
@@ -266,8 +267,10 @@ class I2CLCD():
             
             #self.sendByte(LCD_ROWS[(x+row) % self.nRows], RSmode_CMD)
             self.moveCursor(0, (x+row) % self.nRows)
-            __builtins__.print("moved cursor to :  " + str(self.cursorPos[0]) + ",  " + str((x+row) % self.nRows))
             self.print(currentLine, delay)
             text = text[self.nCols:].strip()
+            
+            #__builtins__.print("ho finito di stampare, la posizione del cursore e': "   + str(self.cursorPos[0]) + ", " + str(self.cursorPos[1]))
         
-        #self.moveCursor(strLen % self.nCols, strLen//self.nCols + (row % self.nRows))
+        self.moveCursor(strLen % self.nCols, strLen//self.nCols + (row % self.nRows))
+        #__builtins__.print("spostiamolo a: "   + str(self.cursorPos[0]) + ", " + str(self.cursorPos[1]))
