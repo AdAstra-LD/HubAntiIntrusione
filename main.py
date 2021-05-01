@@ -50,7 +50,8 @@ def initIO():
     
     print("Sistema pronto.")
     sleep(1250)
-    lcd.printLine("Hai proprio l'\naria di uno che", 0, align = "L", delay = 60)
+    lcd.printLine("Hai proprio l'", 0, align = "L", delay = 60)
+    lcd.printLine("aria di uno che", 1, align = "L", delay = 60)
     sleep(400)
     lcd.clear()
     

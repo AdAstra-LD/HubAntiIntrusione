@@ -215,7 +215,9 @@ class I2CLCD():
         
     def print(self, text, delay = 0, updateCursorPos = False):
         #Print a string at the current cursor position
-        #text:   bytes or str object, str object will be encoded with ASCII
+        #text:              bytes or str object, str object will be encoded with ASCII
+        #delay:             adds an additional delay between a char and another
+        #updateCursorPos:   when True, it also updates the cursor's coordinates tuple
         
         byteArrayString = bytearray(text[:self.nCols])
         
@@ -265,5 +267,4 @@ class I2CLCD():
             self.print(currentLine, delay)
             text = text[self.nCols:].strip()
         
-        #self.moveCursor(strLen % self.nCols, strLen//self.nCols + (row % self.nRows))
-        #self.moveCursor(0, strLen//self.nCols + (row % self.nRows))
+        self.moveCursor(strLen % self.nCols, strLen//self.nCols + (row % self.nRows))
