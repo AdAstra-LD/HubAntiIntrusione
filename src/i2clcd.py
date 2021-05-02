@@ -18,6 +18,8 @@ SHIFT_CGRAM = 3
 SHIFT_BACKLIGHT = 3
 SHIFT_DATA = 4
 
+
+
 # LCD controller command set
 CMD_CLR = 0x01              # DB0: clear display
 CMD_HOME = 0x02             # DB1: return to home position
@@ -50,12 +52,12 @@ SETFUNC_5BY10 = 0x04        # --DB2: 5x10 font (0->5x8 font)
 CMD_RESETFUNC = 0x30        # See "Initializing by Instruction" section
 
 #Flag che permette di impostare l'address counter sulla Char Generator RAM
-#sia per leggere la CGRam che per scriverla
+#sia per leggere la CGRAM che per scriverla
 # 0 1 a d  d r e s 
 CMD_CGRAM = 0x40            # DB6: set/get CG RAM address
 
-#Flag che permette di impostare l'address counter sulla Disp Generator RAM
-#sia per leggere la DDRam che per scriverla
+#Flag che permette di impostare l'address counter sulla Display data RAM
+#sia per leggere la DDRAM che per scriverla
 CMD_DDRAM = 0x80            # DB7: set/get DD RAM address
 
 RSmode_DATA = 0x01     # Mode - Sending data
@@ -65,46 +67,23 @@ RSmode_CMD = 0x00      # Mode - Sending command
 CGRAM_CHAR = (b'\x00', b'\x01', b'\x02', b'\x03', b'\x04', b'\x05', b'\x06', b'\x07')
 
 class I2CLCD():
-    def __init__(self, i2cObj, lcd_cols=16, lcd_rows = 2):
+    def __init__(self, i2cport, address = 0x27, clock = 100000, lcd_cols=16, lcd_rows = 2):
         #LCD class constructor
         
         #i2cObj:        object of I2C class, with communication already inited and started
         #lcd_rows:      LCD rows count - e.g. 2 for LCD1602 and LCD2002, 4 for LCD2004
         #lcd_cols:      width [in characters] of the LCD - e.g. 16 for LCD1602, 20 for LCD2002/2004
-        
-        self.communicPort = i2cObj
+
+        self.communicPort = i2c.I2C(i2cport, address, clock)
         self.nCols = lcd_cols
         self.nRows = lcd_rows
         
         self.backlight = True
         self.lastData = 0x00
-        self.cursorPos = (0, 0)
+        self.cursorPos = [0, 0]
         
-    def i2cWrite(self, data):
-        #"""write one byte to I2C bus"""
-        self.lastData = data
-        self.communicPort.write(data)
-
-    def pulseEn(self):
-        #"""perform a high level pulse to EN"""
-        self.i2cWrite(self.lastData | MASK_EN)
-        sleep(3)
-        self.i2cWrite(self.lastData & ~MASK_EN)
-        sleep(3)
-
-    def sendByte(self, data, RSmode):
-        #"""write one byte to LCD"""
-
-        data_H = (data & 0xF0) | (self.backlight << SHIFT_BACKLIGHT) | RSmode
-        self.i2cWrite(data_H)
-        self.pulseEn()
-
-        data_L = ((data << SHIFT_DATA) & 0xF0) | (self.backlight << SHIFT_BACKLIGHT) | RSmode
-        self.i2cWrite(data_L)
-        self.pulseEn()
-
-        sleep(100, MICROS)
-
+        self.communicPort.start()
+        
     def prepare(self):
         #Inizializzazione
 
@@ -128,17 +107,47 @@ class I2CLCD():
         self.i2cWrite(SETFUNC)
         self.pulseEn()
 
-        self.sendByte(SETFUNC | SETFUNC_2LINES, RSmode_CMD)             # 00101000 Function set: interface 4bit, 2 lines, 5x8 font
-        self.sendByte(CMD_DISPLAY_CTRL | CMD_DISPLAY_ON, RSmode_CMD)       # 00001100 Display ON/OFF: display on, cursor off, cursor blink off
-        self.sendByte(CMD_ENTRY_MODE | CMD_ENTRY_INC, RSmode_CMD)          # 00000110 Entry Mode set: increment cursor pos [don't shift display]
+        self.displayConfig()                 # 00101000 Function set: interface 4bit, 2 lines, 5x8 font
+        self.cursorConfig()                  # 00001100 Display ON/OFF: display on, cursor off, cursor blink off
+        self.inputResponseConfig()           # 00000110 Entry Mode set: increment cursor pos [don't shift display]
         self.clear()
         
+    def i2cWrite(self, data):
+        #"""write one byte to I2C bus"""
+        self.lastData = data
+        self.communicPort.write(data)
+
+    def sendByte(self, data, RSmode):
+        #"""write one byte to LCD"""
+
+        data_H = (data & 0xF0) | (self.backlight << SHIFT_BACKLIGHT) | RSmode
+        self.i2cWrite(data_H)
+        self.pulseEn()
+
+        data_L = ((data << SHIFT_DATA) & 0xF0) | (self.backlight << SHIFT_BACKLIGHT) | RSmode
+        self.i2cWrite(data_L)
+        self.pulseEn()
+
+        sleep(100, MICROS)
+        
+    def pulseEn(self):
+        #"""perform a high level pulse to EN"""
+        self.i2cWrite(self.lastData | MASK_EN)
+        sleep(3)
+        self.i2cWrite(self.lastData & ~MASK_EN)
+        sleep(3)
+    
+    def stop(self):
+        self.communicPort.stop()
+#----------------------------------------------------------#
+# FUNZIONI DI INIZIALIZZAZIONE ----------------------------#
+#----------------------------------------------------------#
     def returnHome(self):
         #"""
         #Reset cursor and display to the original position.
         #"""
         self.sendByte(CMD_HOME, RSmode_CMD)
-        self.cursorPos = (0, 0)
+        self.cursorPos = [0, 0]
         sleep(2)
 
     def clear(self):
@@ -146,12 +155,29 @@ class I2CLCD():
         #Clear the display and reset the cursor position
         #"""
         self.sendByte(CMD_CLR, RSmode_CMD)
+        self.cursorPos = [0, 0]
         sleep(2)
+        
+#----------------------------------------------------------#
+# FUNZIONI DI CONFIGURAZIONE DISPLAY ----------------------#
+#----------------------------------------------------------#
+    def displayConfig(self, eightBitMode = False, twoLines = True, fiveBy10 = False):
+        self.sendByte(SETFUNC | 
+        eightBitMode * SETFUNC_8BIT | 
+        twoLines * SETFUNC_2LINES | 
+        fiveBy10 * SETFUNC_5BY10, RSmode_CMD)
+
+    def inputResponseConfig(self, incrementPos = True, shiftDisplay = False):
+        #incrementPos:      1 = increment/shiftLeft. 0 = decrement/shift right
+        #shiftDisplay:      sets whether to shift display or not
+        
+        self.sendByte( CMD_ENTRY_MODE | 
+        incrementPos * CMD_ENTRY_INC | 
+        shiftDisplay * CMD_ENTRY_SHIFT, RSmode_CMD)
 
 #----------------------------------------------------------#
-# ----------------- FUNZIONI ALTO LIVELLO ---------------- #
+# FUNZIONI BACKLIGHT --------------------------------------#
 #----------------------------------------------------------#
-
     def setBacklight(self, status):
         #Imposta LCD backlight
         self.backlight = status
@@ -163,20 +189,58 @@ class I2CLCD():
         status = self.backlight
         self.setBacklight(not status)
     
-    def setCursor(self, showCur, blinkCur):
-        #Set whether the cursor is visible and whether it will blink
-        cmd = CMD_DISPLAY_CTRL | CMD_DISPLAY_ON | (showCur * CMD_CURSOR_ON) | (blinkCur * CMD_CURSOR_BLINK) 
-        self.sendByte(cmd, RSmode_CMD)
+    def flashDisplay(self, times, delay):
+        #makes backlight flash a given number of times with the specified delay
+        for x in range(2*times):
+            self.toggleBacklight()
+            sleep(times)
         
-    def displayOnOff(self, status):
-        #Set whether the display should be blanked or un-blanked
-        self.sendByte(CMD_DISPLAY_CTRL | status * CMD_DISPLAY_ON, RSmode_CMD)
-
+#----------------------------------------------------------#
+# FUNZIONI CURSORE ----------------------------------------#
+#----------------------------------------------------------#
+    def cursorConfig(self, displayOnOff = True, showCursor = False, blinkCursor = False):
+        #displayOnOff:      sets whether the display should be blanked or un-blanked
+        #showCursor:        sets whether to display cursor or not
+        #showCursor:        sets whether to display blinking cursor or not (it will have no effect if showCursor is False)
+        
+        self.sendByte( CMD_DISPLAY_CTRL | 
+        displayOnOff * CMD_DISPLAY_ON | 
+        showCursor * CMD_CURSOR_ON | 
+        blinkCursor * CMD_CURSOR_BLINK, RSmode_CMD)
+        
+    def shift(self, shamt = 1, delay = -1, moveDisplay = False):
+        #Moves the cursor and, optionally, also the display 
+        
+        #shamt:             shift amount
+        #delay:             sleep time between one shift and the other. ignored if shamt is 1
+        #moveDisplay:       when True, moves display and cursor. otherwise, moves just the cursor
+        
+        if shamt == 0:
+            return
+        
+        if delay < 0:
+            delay = 120
+        
+        shiftRight = shamt > 0
+        
+        if abs(shamt) > 0:
+            for x in range(abs(shamt)):
+                self.sendByte(CMD_MOVE | 
+                shiftRight * CMD_MOVE_RIGHT | 
+                moveDisplay * CMD_MOVE_DISP, RSmode_CMD)
+                sleep(delay)
+        else:
+            self.sendByte(CMD_MOVE | 
+            shiftRight * CMD_MOVE_RIGHT | 
+            moveDisplay * CMD_MOVE_DISP, RSmode_CMD)
+        
+        self.cursorPos[0] = min(self.nCols, self.cursorPos[0] + shamt) if shiftRight else max(0, self.cursorPos[0] + shamt)
+    
     def moveCursor(self, column, row):
         #Move the cursor to a new posotion
         #indices are always zero-based
 
-        self.cursorPos = (column, row)
+        self.cursorPos = [column, row]
         
         #x -> col
         addr = self.cursorPos[0] & 0x3f     # Limit col index to a maximum of 63
@@ -188,25 +252,17 @@ class I2CLCD():
             addr += 0x14
             
         self.sendByte(CMD_DDRAM | addr, RSmode_CMD)
-
-    def shift(self, direction='RIGHT', movementType="MOVECURSOR"):
-        #Move the cursor and display left or right
-        #direction:      could be 'RIGHT' (default) or 'LEFT'
-        #movementType:   specifica se muovere display e cursore o solo cursore
-        shiftRight = direction == "RIGHT"
-        moveDisplay = movementType == "MOVEDISPLAY"
         
-        self.cursorPos = (min(self.nCols, self.cursorPos[0] + 1), self.cursorPos[1]) if shiftRight else (max(0, self.cursorPos[0] - 1), self.cursorPos[1])
-        cmd = CMD_MOVE | (shiftRight * CMD_MOVE_RIGHT) | (moveDisplay * CMD_MOVE_DISP)
-        self.sendByte(cmd, RSmode_CMD)
-        
+#----------------------------------------------------------#
+# FUNZIONI SCRITTURA --------------------------------------#
+#----------------------------------------------------------#
     def writeCGRAM(self, charTuple, CGRAMslot=0):
         #Write a custom character to a chosen CGRAM slot
         
         #charTuple:     tuple of 8 bytes, which stores the character model data
         #CGRAMslot:     int from 0 to 7, to select the CGRAM slot in which to write the new char model
         
-        CGRAMslot &= 7 #Limit CGRAM location selection to a max of 7
+        CGRAMslot &= 7  #Limit CGRAM location selection to a max of 7
         self.sendByte(CMD_CGRAM | (CGRAMslot << SHIFT_CGRAM), RSmode_CMD)
         
         for charRow in charTuple:
@@ -234,12 +290,12 @@ class I2CLCD():
             strLen = len(byteArrayString)
             self.moveCursor(strLen%self.nCols, strLen//self.nCols)
             
-    def printAt(self, colID, rowID, text):
+    def printAtPos(self, text, colID, rowID, delay = 0):
         #Stampa text ad una specifica posizione sul display e mantiene
         #quella posizione in memoria come corrente, per scritture future
         
         self.moveCursor(colID, rowID)
-        self.print(text)
+        self.print(text, delay)
 
     def printLine(self, text, row = 0, align='LEFT', delay = 0):
         #Stampa text come frase intera sull'LCD, andando a capo automaticamente.
@@ -252,7 +308,6 @@ class I2CLCD():
         rowsToPrint = round(strLen/self.nCols)
         
         for x in range (rowsToPrint):
-            
             currentLine = text[:self.nCols].strip()
             whitespace = self.nCols - strLen
             #__builtins__.print("currentLine = " + currentLine)
@@ -265,11 +320,11 @@ class I2CLCD():
             elif align == 'CENTER' or align == 'CENTRE' or align == 'C':
                 currentLine = b' ' * (whitespace // 2) + currentLine + b' ' * (whitespace // 2)
             
-            #self.sendByte(LCD_ROWS[(x+row) % self.nRows], RSmode_CMD)
-            self.moveCursor(0, (x+row) % self.nRows)
-            self.print(currentLine, delay)
-            text = text[self.nCols:].strip()
+            #print current line
+            self.printAtPos(currentLine, 0, (x+row) % self.nRows, delay)
             
+            #prepare next line
+            text = text[self.nCols:].strip()
             #__builtins__.print("ho finito di stampare, la posizione del cursore e': "   + str(self.cursorPos[0]) + ", " + str(self.cursorPos[1]))
         
         self.moveCursor(strLen % self.nCols, strLen//self.nCols + (row % self.nRows))

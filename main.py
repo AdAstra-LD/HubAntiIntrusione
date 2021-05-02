@@ -7,8 +7,8 @@ import threading
 import adc
 import pwm
 import i2c
-import i2clcd as display
-import specialChars as chars
+import src.i2clcd as display
+import src.specialChars as chars
 
 pinAlarmLed = D0    
 pinEnableLed = D15
@@ -27,10 +27,7 @@ def initIO():
     global lcd
     streams.serial(baud = 100000)
     
-    i2cObj = i2c.I2C(I2C2, addr=0x27, clock=100000)
-    i2cObj.start()
-    
-    lcd = display.I2CLCD(i2cObj, lcd_cols=16, lcd_rows=2)
+    lcd = display.I2CLCD(I2C2, lcd_cols=16, lcd_rows=2)
     lcd.prepare()
     
     pinMode(pinAlarmLed, OUTPUT)
@@ -49,27 +46,6 @@ def initIO():
     lcd.writeCGRAM(chars.BIG_EXCLAMATION, 3)
     
     print("Sistema pronto.")
-    sleep(1250)
-    lcd.printLine("Hai proprio l'", 0, align = "L", delay = 60)
-    lcd.printLine("aria di uno che", 1, align = "L", delay = 60)
-    sleep(400)
-    lcd.clear()
-    
-    lcd.printLine("si chiama", 0, align = "L", delay = 60)
-    lcd.printLine("Alessandro", 1, align = "L", delay = 60)
-    
-    print(lcd.cursorPos)
-    
-    lcd.shift()
-    
-    print(lcd.cursorPos)
-    
-    lcd.print(display.CGRAM_CHAR[2])
-    sleep(1250)
-    lcd.clear()
-    lcd.printLine("Wa, non ci credo Ho indovinato?", 0, align = "L", delay = 60)
-    
-    print("Sistema pronto.")
 
 def toggleOnOff():
     global audioEnable
@@ -84,11 +60,11 @@ def toggleOnOff():
     lcd.clear()
 
     if (abilitato):
-        lcd.printAt(lcd.nCols-1, 0, display.CGRAM_CHAR[3])
+        lcd.printAtPos(display.CGRAM_CHAR[3], lcd.nCols-1, 0)
         print("Sistema abilitato")
     else:
         stopAlarm()
-        lcd.printAt(lcd.nCols-1, 0, ' ')
+        lcd.printAtPos(' ', lcd.nCols-1, 0)
         print("Sistema disabilitato")
 
 def intrusione():
@@ -119,13 +95,15 @@ def stopAlarm():
 def soundAlarm(initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
     global audioEnable
     
-    if (initialFreq == 0 or delay == 0 or increment == 0):
+    if initialFreq == 0 or delay == 0 or increment == 0:
         return
         
     currentFreq = initialFreq
     
     while (audioEnable):
-        period=1000000//currentFreq #we are using MICROS so every sec is 1000000 of micros. // is the int division, pwm.write period doesn't accept floats
+        #we are using MICROS so every sec is 1000000 of micros. 
+        #// is the int division, pwm.write period doesn't accept floats
+        period=1000000//currentFreq
         
         #set the period of the buzzer and the duty to 50% of the period
         pwm.write(pinBuzzer, period, period//2, MICROS)
