@@ -24,11 +24,10 @@ audioEnable = True;
 flashEnable = True;
 
 def initIO():
-    global lcd
     streams.serial(baud = 100000)
     
-    lcd = display.I2CLCD(I2C2, lcd_cols=16, lcd_rows=2)
-    lcd.prepare()
+    global lcd
+    lcd = initLCD(None)
     
     pinMode(pinAlarmLed, OUTPUT)
     pinMode(pinEnableLed, OUTPUT)
@@ -39,11 +38,6 @@ def initIO():
     
     digitalWrite(pinEnableLed, LOW)
     digitalWrite(pinAlarmLed, LOW)
-    
-    lcd.writeCGRAM(chars.SMILEY_FACE, 0)
-    lcd.writeCGRAM(chars.SAD_FACE, 1)
-    lcd.writeCGRAM(chars.POKER_FACE, 2)
-    lcd.writeCGRAM(chars.BIG_EXCLAMATION, 3)
     
     print("Sistema pronto.")
 
@@ -119,7 +113,7 @@ def soundAlarm(initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
         sleep(delay)
 
 def flashLed(led, flashFrequency):
-    global flashEnable;
+    global flashEnable
     
     if (flashFrequency == 0):
         flashFrequency = 1
@@ -127,6 +121,20 @@ def flashLed(led, flashFrequency):
     while (flashEnable):
         pinToggle(led)
         sleep(1000//flashFrequency)
+        
+def initLCD(port = I2C0):
+    lcdObj = display.I2CLCD(port, lcd_cols=16, lcd_rows=2)
+    if (port == None):
+        return lcdObj
+    
+    lcdObj.prepare()
+    lcdObj.writeCGRAM(chars.SMILEY_FACE, 0)
+    lcdObj.writeCGRAM(chars.SAD_FACE, 1)
+    lcdObj.writeCGRAM(chars.POKER_FACE, 2)
+    lcdObj.writeCGRAM(chars.BIG_EXCLAMATION, 3)
+    
+    return lcdObj
+
 
 initIO()
 onPinRise(pinEnButton, toggleOnOff)

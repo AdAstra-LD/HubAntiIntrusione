@@ -67,25 +67,33 @@ RSmode_CMD = 0x00      # Mode - Sending command
 CGRAM_CHAR = (b'\x00', b'\x01', b'\x02', b'\x03', b'\x04', b'\x05', b'\x06', b'\x07')
 
 class I2CLCD():
-    def __init__(self, i2cport, address = 0x27, clock = 100000, lcd_cols=16, lcd_rows = 2):
+    def __init__(self, commPort, address = 0x27, clock = 100000, lcd_cols=16, lcd_rows = 2):
         #LCD class constructor
         
         #i2cObj:        object of I2C class, with communication already inited and started
         #lcd_rows:      LCD rows count - e.g. 2 for LCD1602 and LCD2002, 4 for LCD2004
         #lcd_cols:      width [in characters] of the LCD - e.g. 16 for LCD1602, 20 for LCD2002/2004
-
-        self.communicPort = i2c.I2C(i2cport, address, clock)
+        
         self.nCols = lcd_cols
         self.nRows = lcd_rows
         
         self.backlight = True
         self.lastData = 0x00
         self.cursorPos = [0, 0]
+        self.i2cport = commPort
         
+        if (self.i2cport == None):
+            return
+        
+        
+        ### CRITICO - ISTANZA DI I2C ###
+        self.communicPort = i2c.I2C(self.i2cport, address, clock)
         self.communicPort.start()
         
     def prepare(self):
         #Inizializzazione
+        if (self.i2cport == None):
+            return
 
         #Diamo un po' di tempo all'LCD per accendersi del tutto
         sleep(20) 
@@ -154,6 +162,9 @@ class I2CLCD():
         #"""
         #Clear the display and reset the cursor position
         #"""
+        if (self.i2cport == None):
+            return
+        
         self.sendByte(CMD_CLR, RSmode_CMD)
         self.cursorPos = [0, 0]
         sleep(2)
@@ -275,6 +286,9 @@ class I2CLCD():
         #text:              bytes or str object, str object will be encoded with ASCII
         #delay:             adds an additional delay between a char and another
         #updateCursorPos:   when True, it also updates the cursor's coordinates tuple
+        if (self.i2cport == None):
+            return
+        
         
         byteArrayString = bytearray(text[:self.nCols])
         
@@ -293,6 +307,8 @@ class I2CLCD():
     def printAtPos(self, text, colID, rowID, delay = 0):
         #Stampa text ad una specifica posizione sul display e mantiene
         #quella posizione in memoria come corrente, per scritture future
+        if (self.i2cport == None):
+            return
         
         self.moveCursor(colID, rowID)
         self.print(text, delay)
@@ -303,6 +319,8 @@ class I2CLCD():
         #text:      bytes or str object, str object will be encoded with ASCII
         #row:       row number is zero-based
         #align:     could be 'LEFT' | 'L' (default), 'RIGHT' | 'R' or 'CENTER' | 'CENTRE' | 'C'
+        if (self.i2cport == None):
+            return
         
         strLen = len(text)
         rowsToPrint = round(strLen/self.nCols)
