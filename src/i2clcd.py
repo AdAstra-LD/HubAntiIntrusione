@@ -85,7 +85,6 @@ class I2CLCD():
         if (self.i2cport == None):
             return
         
-        
         ### CRITICO - ISTANZA DI I2C ###
         self.communicPort = i2c.I2C(self.i2cport, address, clock)
         self.communicPort.start()
@@ -226,6 +225,8 @@ class I2CLCD():
         #delay:             sleep time between one shift and the other. ignored if shamt is 1
         #moveDisplay:       when True, moves display and cursor. otherwise, moves just the cursor
         
+        
+        #Se il cursore sta già al bordo dello schermo, lo shift lo farà sparire!!!!!!!!!
         if shamt == 0:
             return
         
@@ -267,6 +268,30 @@ class I2CLCD():
 #----------------------------------------------------------#
 # FUNZIONI SCRITTURA --------------------------------------#
 #----------------------------------------------------------#
+    def splitSentence(self, sentence): 
+        stringCopy = sentence
+        
+        stringList = []
+        posBackslash = 0
+        while (len(stringCopy) > 0 and posBackslash >= 0):
+            __builtins__.print(str(stringCopy)) 
+            
+            posBackslash = stringCopy.find('\n')
+            
+            #__builtins__.print("Found backslash at " + str(posBackslash))
+            
+            if (posBackslash < 0):
+                for x in range (self.ceil(len(stringCopy) / self.nCols)):
+                    stringList.append(stringCopy[:self.nCols].strip())
+                    stringCopy = stringCopy[self.nCols:]
+            else:
+                stringList.append(stringCopy[:posBackslash].strip())
+                stringCopy = stringCopy[(posBackslash+1):]
+                
+            __builtins__.print("Ho aggiunto la stringa " +  '"' + str(stringList[len(stringList)-1] + '"'))
+            
+        return stringList
+        
     def writeCGRAM(self, charTuple, CGRAMslot=0):
         #Write a custom character to a chosen CGRAM slot
         
@@ -313,7 +338,10 @@ class I2CLCD():
         self.moveCursor(colID, rowID)
         self.print(text, delay)
 
-    def printLine(self, text, row = 0, align='LEFT', delay = 0):
+    def ceil(self, n):
+        return -int((-n) // 1)
+    
+    def printLine(self, text, row = 0, align='LEFT', delay = 0, sentenceDelay = 2000):
         #Stampa text come frase intera sull'LCD, andando a capo automaticamente.
 
         #text:      bytes or str object, str object will be encoded with ASCII
@@ -322,14 +350,25 @@ class I2CLCD():
         if (self.i2cport == None):
             return
         
-        strLen = len(text)
-        rowsToPrint = round(strLen/self.nCols)
+        rowsToPrint = self.splitSentence(text)
+        listLen = len(rowsToPrint)
         
-        for x in range (rowsToPrint):
-            currentLine = text[:self.nCols].strip()
+        for x in range (listLen):
+            #sleep(500)
+            if (x % self.nRows == 0):
+                if (x != 0 and listLen >= self.nRows):
+                    #__builtins__.print("Sleeping sentenceDelay")
+                    sleep(sentenceDelay)
+                    
+                self.clear()
+                
+            currentLine = rowsToPrint[x]
+            strLen = len(currentLine)
+            
             whitespace = self.nCols - strLen
             #__builtins__.print("currentLine = " + currentLine)
             #__builtins__.print("la stringa da stampare è lunga " + str(len(currentLine)))
+            
             
             if align == 'LEFT' or align == 'L':
                 currentLine = currentLine + b' ' * whitespace
@@ -338,12 +377,19 @@ class I2CLCD():
             elif align == 'CENTER' or align == 'CENTRE' or align == 'C':
                 currentLine = b' ' * (whitespace // 2) + currentLine + b' ' * (whitespace // 2)
             
-            #print current line
+            #print current line to LCD
             self.printAtPos(currentLine, 0, (x+row) % self.nRows, delay)
             
-            #prepare next line
-            text = text[self.nCols:].strip()
             #__builtins__.print("ho finito di stampare, la posizione del cursore e': "   + str(self.cursorPos[0]) + ", " + str(self.cursorPos[1]))
         
-        self.moveCursor(strLen % self.nCols, strLen//self.nCols + (row % self.nRows))
-        #__builtins__.print("spostiamolo a: "   + str(self.cursorPos[0]) + ", " + str(self.cursorPos[1]))
+        
+        if align != 'RIGHT' and align != 'R':
+            cursorX = len(rowsToPrint[listLen-1]) % self.nCols
+        else
+            cursorX = self.nCols - 1 - (len(rowsToPrint[listLen-1]) % self.nCols)
+                
+        
+        cursorY = (listLen-1) % self.nRows
+        self.moveCursor(cursorX, cursorY)
+        
+        #__builtins__.print("ho spostato il cursore a: "   + str(self.cursorPos[0]) + ", " + str(self.cursorPos[1]))

@@ -32,8 +32,8 @@ try:
     client = mqtt.Client("test", True)
     for retry in range(5):
         try:
-            client.connect("test.mosquitto.org", 30)
-            
+            client.connect("test.mosquitto.org", 20)
+            client.on_connect(mqttConnected())
             
             break
         except Exception as e:
@@ -43,3 +43,7 @@ except Exception as e:
     print("zoccola")
     
 client.publish("stanza/sensore", 21, 2)
+
+
+def mqttConnected():
+    print("Alessandro e' una puttana")

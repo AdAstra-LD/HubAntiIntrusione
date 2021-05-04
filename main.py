@@ -27,7 +27,7 @@ def initIO():
     streams.serial(baud = 100000)
     
     global lcd
-    lcd = initLCD(None)
+    lcd = initLCD(I2C2)
     
     pinMode(pinAlarmLed, OUTPUT)
     pinMode(pinEnableLed, OUTPUT)
@@ -134,7 +134,6 @@ def initLCD(port = I2C0):
     lcdObj.writeCGRAM(chars.BIG_EXCLAMATION, 3)
     
     return lcdObj
-
 
 initIO()
 onPinRise(pinEnButton, toggleOnOff)
