@@ -87,13 +87,13 @@ class I2CLCD():
         
         ### CRITICO - ISTANZA DI I2C ###
         self.communicPort = i2c.I2C(self.i2cport, address, clock)
-        self.communicPort.start()
         
     def prepare(self):
         #Inizializzazione
         if (self.i2cport == None):
             return
-
+        
+        self.communicPort.start()
         #Diamo un po' di tempo all'LCD per accendersi del tutto
         sleep(20) 
         
@@ -113,9 +113,9 @@ class I2CLCD():
         #Imposta LCD in modalità 4 bit
         self.i2cWrite(SETFUNC)
         self.pulseEn()
-
-        self.displayConfig()                 # 00101000 Function set: interface 4bit, 2 lines, 5x8 font
-        self.cursorConfig()                  # 00001100 Display ON/OFF: display on, cursor off, cursor blink off
+        
+        self.displayConfig()                 # 0001 1100 Function set: interface 4bit, 2 lines, 5x8 font
+        self.cursorConfig()                  # 0000 1100 Display ON/OFF: display on, cursor off, cursor blink off
         self.inputResponseConfig()           # 00000110 Entry Mode set: increment cursor pos [don't shift display]
         self.clear()
         
@@ -123,6 +123,13 @@ class I2CLCD():
         #"""write one byte to I2C bus"""
         self.lastData = data
         self.communicPort.write(data)
+    
+    def pulseEn(self):
+        #"""perform a high level pulse to EN"""
+        self.i2cWrite(self.lastData | MASK_EN)
+        sleep(3)
+        self.i2cWrite(self.lastData & ~MASK_EN)
+        sleep(3)
 
     def sendByte(self, data, RSmode):
         #"""write one byte to LCD"""
@@ -136,13 +143,6 @@ class I2CLCD():
         self.pulseEn()
 
         sleep(100, MICROS)
-        
-    def pulseEn(self):
-        #"""perform a high level pulse to EN"""
-        self.i2cWrite(self.lastData | MASK_EN)
-        sleep(3)
-        self.i2cWrite(self.lastData & ~MASK_EN)
-        sleep(3)
     
     def stop(self):
         self.communicPort.stop()
@@ -262,7 +262,7 @@ class I2CLCD():
             addr += 0x40    
         if (self.cursorPos[1] & 0b00000010): # Lines 2 & 3 (1x, i.e.: 10 and 11)
             addr += 0x14
-            
+        
         self.sendByte(CMD_DDRAM | addr, RSmode_CMD)
         
 #----------------------------------------------------------#
@@ -307,13 +307,13 @@ class I2CLCD():
         self.moveCursor(self.cursorPos[0], self.cursorPos[1]) #Re-stating the cursor position is necessary
         
     def print(self, text, delay = 0, updateCursorPos = False):
-        #Print a string at the current cursor position
+        #Stampa una stringa alla posizione corrente
         #text:              bytes or str object, str object will be encoded with ASCII
-        #delay:             adds an additional delay between a char and another
-        #updateCursorPos:   when True, it also updates the cursor's coordinates tuple
+        #delay:             aggiunge delay tra un char e l'altro
+        #updateCursorPos:   quando True, aggiorna la posizione della tupla cursorPos
+        
         if (self.i2cport == None):
             return
-        
         
         byteArrayString = bytearray(text[:self.nCols])
         
