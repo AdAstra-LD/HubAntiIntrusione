@@ -14,7 +14,7 @@ pinAlarmLed = D0
 pinEnableLed = D15
 pinBuzzer = D13.PWM
 
-pinIR = A1
+pinIR = D27
 pinEnButton = D12
 
 
