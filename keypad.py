@@ -111,22 +111,22 @@ class KeyPad(object):
 
     def _setRow(self,num):
         if num==1:
-            self._pinRow1.on()
-            self._pinRow2.off()
-            self._pinRow3.off()
-            self._pinRow4.off()
+            digitalWrite(self._pinRow1, HIGH)
+            digitalWrite(self._pinRow2, LOW)
+            digitalWrite(self._pinRow3, LOW)
+            digitalWrite(self._pinRow4, LOW)
         if num==2:
-            self._pinRow1.off()
-            self._pinRow2.on()
-            self._pinRow3.off()
-            self._pinRow4.off()
+            digitalWrite(self._pinRow1, LOW)
+            digitalWrite(self._pinRow2, HIGH)
+            digitalWrite(self._pinRow3, LOW)
+            digitalWrite(self._pinRow4, LOW)
         if num==3:
-            self._pinRow1.off()
-            self._pinRow2.off()
-            self._pinRow3.on()
-            self._pinRow4.off()
+            digitalWrite(self._pinRow1, LOW)
+            digitalWrite(self._pinRow2, LOW)
+            digitalWrite(self._pinRow3, HIGH)
+            digitalWrite(self._pinRow4, LOW)
         if num==4:
-            self._pinRow1.off()
-            self._pinRow2.off()
-            self._pinRow3.off()
-            self._pinRow4.on()
+            digitalWrite(self._pinRow1, LOW)
+            digitalWrite(self._pinRow2, LOW)
+            digitalWrite(self._pinRow3, LOW)
+            digitalWrite(self._pinRow4, HIGH)
