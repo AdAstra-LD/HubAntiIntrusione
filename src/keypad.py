@@ -1,3 +1,23 @@
+########ESEMPIO#############
+############################
+#import keypad as padlib
+#import streams
+#streams.serial()
+#
+#def key():
+#    keyvalue=kpad.scan()
+#    if keyvalue != None:
+#        print(keyvalue)
+#        sleep(300)
+#        return keyvalue
+#        
+#kpad=padlib.KeyPad(padlib.PINSETUP_COMPACT_D12D14)
+#
+#print("I'm ready")
+#while True:
+#    key()
+############################
+
 import timers
 
 lastChangeTime=0
@@ -33,17 +53,16 @@ class KeyPad():
         nowTime = timers.now()
         if(nowTime-lastChangeTime > 10):
             lastChangeTime=nowTime
-            if(self._readCol() != 0): return self._readCol()
+            if(self._readCol() != 0):
+                State=self._readCol()
+                return State
     
-    def _setRow(self,num):
-        for x in range(NROWS):
-            digitalWrite(self._pins[x], HIGH) if (x == num) else digitalWrite(self._pins[x], LOW)
-            
     def _readRow(self, rowNumber, colValuesTuple):
         self._setRow(rowNumber)
         
         for x in range(NROWS):
-            if(digitalRead(self._pins[x-4])): return colValuesTuple[x]
+            if(digitalRead(self._pins[x-4])):
+                return colValuesTuple[x]
             
         return 0
     
@@ -52,5 +71,10 @@ class KeyPad():
         
         for col in COLS:
             buffer = self._readRow(rowNumber, col)
-            if buffer != 0: return buffer
+            if buffer != 0:
+                return buffer
             rowNumber += 1
+
+    def _setRow(self,num):
+        for x in range(NROWS):
+            digitalWrite(self._pins[x], HIGH) if (x == num) else digitalWrite(self._pins[x], LOW)
