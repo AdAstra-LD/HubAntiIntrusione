@@ -1,29 +1,31 @@
 import timers
 
 lastChangeTime=0
-keyState=0
+keyPressed=0
 State=0
 
-class KeyPad(object):
-    def __init__(self, row1: D14, row2: D27, row3: D26, row4: D25, col1: D13, col2: D21, col3: D22, col4: D23):
-        self._pinRow1 = row1
-        self._pinRow2 = row2
-        self._pinRow3 = row3
-        self._pinRow4 = row4
-        self._pinCol1 = col1
-        self._pinCol2 = col2
-        self._pinCol3 = col3
-        self._pinCol4 = col4
+PINSETUP_DEFAULT = (D14, D27, D26, D25, D13, D21, D22, D23)
+PINSETUP_COMPACT = (D14, D27, D26, D25, D13, D21, D22, D23)
+
+NROWS = 4
+VALUES_R1 = ("1", "2", "3", "A")
+VALUES_R2 = ("4", "5", "6", "B")
+VALUES_R3 = ("7", "8", "9", "C")
+VALUES_R4 = ("*", "0", "#", "D")
+
+ROW_VALUES = (VALUES_R1, VALUES_R2, VALUES_R3, VALUES_R4)
+
+class KeyPad():
+    def __init__(self, pinTuple = PINSETUP_DEFAULT):
+        self._pins = []
         
-        pinMode(self._pinRow1, OUTPUT)
-        pinMode(self._pinRow2, OUTPUT)
-        pinMode(self._pinRow3, OUTPUT)
-        pinMode(self._pinRow4, OUTPUT)
-        pinMode(self._pinCol1, INPUT_PULLDOWN)
-        pinMode(self._pinCol2, INPUT_PULLDOWN)
-        pinMode(self._pinCol3, INPUT_PULLDOWN)
-        pinMode(self._pinCol4, INPUT_PULLDOWN)
-        
+        ctr = 0
+        for x in pinTuple:
+            self._pins.append(x)
+            
+            #I primi 4 sono rows -> OUTPUT, gli ultimi 4 sono cols -> INPUT_PULLDOWN
+            pinMode(self._pins[-1], INPUT_PULLDOWN) if (ctr > 3) else pinMode(self._pins[-1], OUTPUT)
+            ctr += 1
     
     def scan(self):
         global lastChangeTime
@@ -34,99 +36,25 @@ class KeyPad(object):
             if(self._readCol() != 0):
                 State=self._readCol()
                 return State
-            
-    def _readRow1(self):
-        self._setRow(1)
-        
-        if(digitalRead(self._pinCol1)): #firstCol
-            keyState='1'
-        elif(digitalRead(self._pinCol2)): #secondCol
-            keyState='2'
-        elif(digitalRead(self._pinCol3)): #thirdCol
-            keyState='3'
-        elif(digitalRead(self._pinCol4)): #fourthCol
-            keyState='A'
-        else:
-            keyState=0
-        return keyState
-
-    def _readRow2(self):
-        self._setRow(2)
-        
-        if(digitalRead(self._pinCol1)):
-            keyState='4'
-        elif(digitalRead(self._pinCol2):
-            keyState='5'
-        elif(digitalRead(self._pinCol3):
-            keyState='6'
-        elif(digitalRead(self._pinCol4):
-            keyState='B'
-        else:
-            keyState=0 
-        return keyState
-
-    def _readRow3(self):
-        self._setRow(3)
-        
-        if(digitalRead(self._pinCol1)):
-            keyState='7'
-        elif(digitalRead(self._pinCol2)):
-            keyState='8'
-        elif(digitalRead(self._pinCol3)):
-            keyState='9'
-        elif(digitalRead(self._pinCol4)):
-            keyState='C'
-        else:
-            keyState=0 
-        return keyState
     
-    def _readRow4(self):
-        self._setRow(4)
+    def _readRow(self, rowNumber, colValuesTuple):
+        self._setRow(rowNumber)
         
-        if(digitalRead(self._pinCol1)):
-            keyState='*'
-        elif(digitalRead(self._pinCol2)):
-            keyState='0'
-        elif(digitalRead(self._pinCol3)):
-            keyState='#'
-        elif(digitalRead(self._pinCol4)):
-            keyState='D'
-        else:
-            keyState=0
-        return keyState
+        for x in range(NROWS):
+            if(digitalRead(self._pins[x-4])):
+                return colValuesTuple[x]
+            
+        return 0
     
     def _readCol(self):
-        data_buffer1=self._readRow1()
-        data_buffer2=self._readRow2()
-        data_buffer3=self._readRow3()
-        data_buffer4=self._readRow4()
-        if (data_buffer1 != 0):
-            return data_buffer1
-        elif (data_buffer2 != 0):
-            return data_buffer2
-        elif (data_buffer3 != 0):
-            return data_buffer3
-        elif (data_buffer4 != 0):
-            return data_buffer4
+        rowNumber = 0
+        
+        for val in ROW_VALUES:
+            buffer = self._readRow(rowNumber, val)
+            if buffer != 0:
+                return buffer
+            rowNumber += 1
 
     def _setRow(self,num):
-        if num==1:
-            digitalWrite(self._pinRow1, HIGH)
-            digitalWrite(self._pinRow2, LOW)
-            digitalWrite(self._pinRow3, LOW)
-            digitalWrite(self._pinRow4, LOW)
-        if num==2:
-            digitalWrite(self._pinRow1, LOW)
-            digitalWrite(self._pinRow2, HIGH)
-            digitalWrite(self._pinRow3, LOW)
-            digitalWrite(self._pinRow4, LOW)
-        if num==3:
-            digitalWrite(self._pinRow1, LOW)
-            digitalWrite(self._pinRow2, LOW)
-            digitalWrite(self._pinRow3, HIGH)
-            digitalWrite(self._pinRow4, LOW)
-        if num==4:
-            digitalWrite(self._pinRow1, LOW)
-            digitalWrite(self._pinRow2, LOW)
-            digitalWrite(self._pinRow3, LOW)
-            digitalWrite(self._pinRow4, HIGH)
+        for x in range(NROWS):
+            digitalWrite(self._pins[x], HIGH) if (x == num) else digitalWrite(self._pins[x], LOW)
