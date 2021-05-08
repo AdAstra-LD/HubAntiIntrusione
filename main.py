@@ -10,13 +10,12 @@ import i2c
 import src.i2clcd as display
 import src.specialChars as chars
 
-pinAlarmLed = D0    
-pinEnableLed = D15
+pinAlarmLed = A0    
+pinEnableLed = A1
 pinBuzzer = D13.PWM
 
-pinIR = D27
-pinEnButton = D12
-
+pinIR = A7
+pinEnButton = D9
 
 initialFreq = 150;
 abilitato = False;
@@ -27,7 +26,7 @@ def initIO():
     streams.serial(baud = 100000)
     
     global lcd
-    lcd = initLCD(I2C2)
+    lcd = initLCD(I2C0)
     
     pinMode(pinAlarmLed, OUTPUT)
     pinMode(pinEnableLed, OUTPUT)

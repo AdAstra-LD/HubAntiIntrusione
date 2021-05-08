@@ -385,7 +385,7 @@ class I2CLCD():
         
         if align != 'RIGHT' and align != 'R':
             cursorX = len(rowsToPrint[listLen-1]) % self.nCols
-        else
+        else:
             cursorX = self.nCols - 1 - (len(rowsToPrint[listLen-1]) % self.nCols)
                 
         
