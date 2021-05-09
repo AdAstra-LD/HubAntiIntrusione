@@ -7,8 +7,11 @@ import threading
 import adc
 import pwm
 import i2c
-import src.i2clcd as display
-import src.specialChars as chars
+
+import display.LCDI2C as lcdi2c
+import display.specialChars as chars
+import userinput.settings as settings
+import userinput.keypad as keypad
 
 pinAlarmLed = A0    
 pinEnableLed = A1
@@ -27,6 +30,8 @@ def initIO():
     
     global lcd
     lcd = initLCD(I2C0)
+    pad = keypad.KeyPad(keypad.PINSETUP_GPIOEXT_D15__D05)
+    settings.userSetup(lcd, pad)
     
     pinMode(pinAlarmLed, OUTPUT)
     pinMode(pinEnableLed, OUTPUT)
@@ -37,8 +42,6 @@ def initIO():
     
     digitalWrite(pinEnableLed, LOW)
     digitalWrite(pinAlarmLed, LOW)
-    
-    print("Sistema pronto.")
 
 def toggleOnOff():
     global audioEnable
@@ -53,7 +56,7 @@ def toggleOnOff():
     lcd.clear()
 
     if (abilitato):
-        lcd.printAtPos(display.CGRAM_CHAR[3], lcd.nCols-1, 0)
+        lcd.printAtPos(lcdi2c.CGRAM_CHAR[3], lcd.nCols-1, 0)
         print("Sistema abilitato")
     else:
         stopAlarm()
@@ -122,7 +125,7 @@ def flashLed(led, flashFrequency):
         sleep(1000//flashFrequency)
         
 def initLCD(port = I2C0):
-    lcdObj = display.I2CLCD(port, lcd_cols=16, lcd_rows=2)
+    lcdObj = lcdi2c.LCDI2C(port, lcd_cols=16, lcd_rows=2)
     if (port == None):
         return lcdObj
     
