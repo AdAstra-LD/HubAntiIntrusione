@@ -26,7 +26,6 @@ keyPressed=0
 PINSETUP_DEFAULT =                      (D14, D27, D26, D25, D13, D21, D22, D23)
 PINSETUP_COMPACT_D15D02 =               (D15, D2, D0, D4, D16, D17, D5, D18)
 PINSETUP_GPIOEXT_D15__D05 =             (D15, D2, D0, D4, D5, D18, D19, D21)
-PINSETUP_GPIOEXT_D15__D05_REVERSED =    (D21, D19, D18, D5, D4, D0, D2, D15)
 
 NUM_ROWS = 4
 NO_BUTTON_PRESSED = -1
@@ -46,7 +45,9 @@ class KeyPad():
         for x in pinTuple:
             self._pins.append(x)
             
-            #I primi 4 contatti da sx, cioè da 7 a 4, sono rows -> OUTPUT
+            #I primi 4 contatti da sx, cioè da 7 a 4, sono rows -> OUTPUT 
+            # DEVONO AVERE ADC!!!!
+            
             #Gli ultimi 4 contatti, cioè da 3 a 0, sono cols -> INPUT_PULLDOWN
             
             #O O O O  I I I I
