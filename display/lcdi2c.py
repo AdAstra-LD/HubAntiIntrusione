@@ -217,12 +217,11 @@ class LCDI2C():
         showCursor * CMD_CURSOR_ON | 
         blinkCursor * CMD_CURSOR_BLINK, RSmode_CMD)
         
-    def shift(self, shamt = 1, delay = -1, moveDisplay = False):
-        #Moves the cursor and, optionally, also the display 
+    def shift(self, shamt = 1, delay = -1):
+        #Moves the cursor by shamt positions, with a specified delay for each shift
         
         #shamt:             shift amount
         #delay:             sleep time between one shift and the other. ignored if shamt is 1
-        #moveDisplay:       when True, moves display and cursor. otherwise, moves just the cursor
         
         
         #Se il cursore sta già al bordo dello schermo, lo shift lo farà sparire!!!!!!!!!
@@ -232,16 +231,19 @@ class LCDI2C():
         if delay < 0:
             delay = 120
         
-        shiftRight = shamt > 0
-        
         if self.cursorPos[0] + shamt > self.nCols -1 or self.cursorPos[0] + shamt < 0:
             return
         else:
             if (delay > 0):
+                if shamt >= 0:
+                    amt = 1
+                else:
+                    amt = -1
+                    
                 for x in range(abs(shamt)):
-                    self.moveCursor(self.cursorPos[0]-1, self.cursorPos[1])
+                    self.moveCursor(self.cursorPos[0]+amt, self.cursorPos[1])
             else:
-                self.moveCursor(self.cursorPos[0]-shamt, self.cursorPos[1])
+                self.moveCursor(self.cursorPos[0]+shamt, self.cursorPos[1])
     
     def moveCursor(self, column, row):
         #Move the cursor to a new posotion

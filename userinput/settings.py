@@ -6,6 +6,8 @@ SYSTEM_UNINITIALIZED = 0
 SYSTEM_UNPROTECTED = 1
 SYSTEM_PROTECTED = 1
 
+PASSWORD_MAXLEN = 8
+
 def userSetup(lcd, pad):
     strm = flash.FlashFileStream(memmap.ESP32_BASEADDR, 9)
     strm[0] = 0
@@ -38,40 +40,47 @@ def passwordScreen(lcd, pad):
     lcd.cursorConfig(True, True, True)
     
     inputStartPos = lcd.cursorPos[0]
-    
-    exit = False
-    old = None
     password = []
+    val = ""
     
-    while (not exit):
+    while (True):
         val = pad.scan()
-        
-        if val != old:
-            old = val
+        ## ATTENZIONE ALLE PRESSIONI RIPETUTE...
+        if isNumber(val):
+            if len(password) < PASSWORD_MAXLEN:
+                password.append(val)
+                lcd.print(val)
+        elif val == 'D':
+            if len(password) == 0:
+                lcd.printLine("Proceed with no\npword?  1=Y  0=N")
+                ##GET ONE KEYPRESS
+                sleep(1500) #actually wait for user confirmation
+                lcd.printLine("You can always\nset one later on") #if YES
+                lcd.cursorConfig(True, False, False)
+            else:
+                lcd.printLine("Confirm " + str("".join(password)) + "\n" + "1=Yes  0=No")
+                lcd.moveCursor(lcd.nCols-1, lcd.nRows-1)
+                ##GET ONE KEYPRESS
+        else:
+            posInPassword = lcd.cursorPos[0] - inputStartPos
             
-            if val != None:
-                if isNumber(val):
-                    lcd.print(val)
-                    password.append(val)
-                elif val == 'C':
-                    if(lcd.cursorPos[0] > inputStartPos):
-                        lcd.shift(-1)
-                        lcd.print(" ", updateCursorPos = False)
-                        lcd.shift(-1)
-                        password.pop(-1)
-                elif val == 'D':
+            print(str(posInPassword))
+            if val == 'C':
+                if posInPassword > 0:
+                    lcd.shift(-1)
+                    password.pop(posInPassword - 1)
+                    whitespaces = ' ' * (PASSWORD_MAXLEN-len(password))
+                    remaining = password[posInPassword-1:]
                     
-                    if(len(password) == 0):
-                        lcd.printLine("Proceed with no\npword?  1=Y  0=N")
-                        ##GET ONE KEYPRESS
-                        sleep(1500) #actually wait for user confirmation
-                        lcd.printLine("You can always\nset one later on") #if YES
-                    else:
-                        lcd.printLine("Confirm " + str("".join(password)) + "\n" + "1=Yes  0=No")
-                        lcd.moveCursor(lcd.nCols-1, lcd.nRows-1)
-                        ##GET ONE KEYPRESS
-        
-        sleep(120)
+                    x = lcd.cursorPos[0]
+                    lcd.print(str("".join(remaining) + whitespaces))
+                    lcd.moveCursor(x, lcd.cursorPos[1])
+            elif val == '*':
+                if(posInPassword > 0):
+                    lcd.shift(-1)
+            elif val == '#':
+                if(posInPassword < len(password)):
+                    lcd.shift(1)
 
 def isNumber(s):
     try:
@@ -79,4 +88,3 @@ def isNumber(s):
         return True
     except ValueError:
         return False
-        

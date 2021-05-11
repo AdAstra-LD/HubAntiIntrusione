@@ -37,6 +37,8 @@ VALUES_R4 = ("*", "0", "#", "D")
 
 COLS = (VALUES_R1, VALUES_R2, VALUES_R3, VALUES_R4)
 
+lastValue = ""
+
 class KeyPad():
     def __init__(self, pinTuple = PINSETUP_DEFAULT):
         self._pins = []
@@ -57,14 +59,18 @@ class KeyPad():
     def scan(self):
         global lastChangeTime
         
-        nowTime = timers.now() #Ottieni millisecondi passati dall'avvio del programma
-        if(nowTime-lastChangeTime > 10): #se ne sono passati almeno 10
-            lastChangeTime=nowTime       #aggiorna il tempo 
-            
-            if(self._readCol() != NO_BUTTON_PRESSED):    #scansiona pressioni
-                State = self._readCol()
-                return State
-    
+        while True:
+            nowTime = timers.now()              #Ottieni millisecondi passati dall'avvio del programma
+            if(nowTime-lastChangeTime > 10):    #se ne sono passati almeno 10
+                lastChangeTime=nowTime          #aggiorna il tempo 
+                status = self._readCol()        #scansiona pressioni
+                
+                if status != lastValue:         #evita duplicati
+                    lastValue = status
+                    
+                    if status != None:
+                        return status
+
     def _readCol(self):
         colNumber = 0
         

@@ -10,12 +10,14 @@ import i2c
 
 import display.LCDI2C as lcdi2c
 import display.specialChars as chars
+import display.localDashboard as ui
 import userinput.settings as settings
 import userinput.keypad as keypad
 
 pinAlarmLed = A0    
 pinEnableLed = A1
 pinBuzzer = D13.PWM
+pinPhotoresist = A4
 
 pinIR = A7
 pinEnButton = D9
@@ -33,15 +35,23 @@ def initIO():
     pad = keypad.KeyPad(keypad.PINSETUP_GPIOEXT_D15__D05)
     settings.userSetup(lcd, pad)
     
+    print("Setting up pins...")
     pinMode(pinAlarmLed, OUTPUT)
     pinMode(pinEnableLed, OUTPUT)
     pinMode(pinBuzzer, OUTPUT)
+    pinMode(pinPhotoresist, INPUT)
     
     pinMode(pinIR, INPUT)
     pinMode(pinEnButton, INPUT_PULLDOWN)
     
+    print("Turning LEDs off...")
     digitalWrite(pinEnableLed, LOW)
     digitalWrite(pinAlarmLed, LOW)
+    
+    #while True:
+    #    pl = 4095-adc.read(pinPhotoresist)
+    #    print(str(100*pl//4095) + "%")
+    #    sleep(500)
 
 def toggleOnOff():
     global audioEnable
@@ -56,7 +66,7 @@ def toggleOnOff():
     lcd.clear()
 
     if (abilitato):
-        lcd.printAtPos(lcdi2c.CGRAM_CHAR[3], lcd.nCols-1, 0)
+        lcd.printAtPos(lcdi2c.CGRAM_CHAR[1], lcd.nCols-1, 0) #EXCLAMATION
         print("Sistema abilitato")
     else:
         stopAlarm()
@@ -131,9 +141,11 @@ def initLCD(port = I2C0):
     
     lcdObj.prepare()
     lcdObj.writeCGRAM(chars.SMILEY_FACE, 0)
-    lcdObj.writeCGRAM(chars.SAD_FACE, 1)
-    lcdObj.writeCGRAM(chars.POKER_FACE, 2)
-    lcdObj.writeCGRAM(chars.BIG_EXCLAMATION, 3)
+    lcdObj.writeCGRAM(chars.BIG_EXCLAMATION, 1)
+    lcdObj.writeCGRAM(chars.TEMPERATURE, 2)
+    lcdObj.writeCGRAM(chars.HUMIDITY, 3)
+    lcdObj.writeCGRAM(chars.LIGHT, 4)
+    lcdObj.writeCGRAM(chars.CELSIUS, 5)
     
     return lcdObj
 
