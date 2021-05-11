@@ -62,9 +62,6 @@ CMD_DDRAM = 0x80            # DB7: set/get DD RAM address
 RSmode_DATA = 0x01     # Mode - Sending data
 RSmode_CMD = 0x00      # Mode - Sending command
 
-#Segnalatore di posizione CGRAM
-CGRAM = (b'\x00', b'\x01', b'\x02', b'\x03', b'\x04', b'\x05', b'\x06', b'\x07')
-
 class LCDI2C():
     def __init__(self, commPort, address = 0x27, clock = 100000, nCols=16, nRows = 2):
         #LCD class constructor
@@ -73,6 +70,8 @@ class LCDI2C():
         #nRows:      LCD rows count - e.g. 2 for LCD1602 and LCD2002, 4 for LCD2004
         #nCols:      width [in characters] of the LCD - e.g. 16 for LCD1602, 20 for LCD2002/2004
         
+        #Segnalatore di posizione CGRAM
+        self.CGRAM = (b'\x00', b'\x01', b'\x02', b'\x03', b'\x04', b'\x05', b'\x06', b'\x07')
 
         self.nCols = nCols
         self.nRows = nRows

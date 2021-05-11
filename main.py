@@ -66,7 +66,7 @@ def toggleOnOff():
     lcd.clear()
 
     if (abilitato):
-        lcd.printAtPos(lcdi2c.CGRAM[1], lcd.nCols-1, 0) #EXCLAMATION
+        lcd.printAtPos(lcd.CGRAM[1], lcd.nCols-1, 0) #EXCLAMATION
         print("Sistema abilitato")
     else:
         stopAlarm()

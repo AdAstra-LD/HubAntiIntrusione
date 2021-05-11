@@ -7,7 +7,7 @@ lcdLock = threading.Lock()
 def showTemperature(lcd, temperature, CGRAMcharPos = 0, celsiusSymbolPos = 3):
     lcdLock.acquire()
     
-    lcd.printAtPos(lcd.CGRAMchar[CGRAMcharPos], 0, 0) #Temperature Symbol
+    lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 0) #Temperature Symbol
     #READ ACTUAL TEMPERATURE!!!
     
     tempString = str(temperature)
@@ -16,13 +16,13 @@ def showTemperature(lcd, temperature, CGRAMcharPos = 0, celsiusSymbolPos = 3):
     temperDigits = len(tempString)
     
     lcd.print(tempString) #ex.: 35 °C
-    lcd.print(lcd.CGRAMchar[celsiusSymbolPos])
+    lcd.print(lcd.CGRAM[celsiusSymbolPos])
     lcdLock.release()
     
 def showHumidity(lcd, humidity, CGRAMcharPos = 1):
     lcdLock.acquire()
     
-    lcd.printAtPos(lcd.CGRAMchar[CGRAMcharPos], 3 + temperDigits, 0)
+    lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 3 + temperDigits, 0)
     
     humidString = str(humidity)
     global humidDigits
@@ -34,7 +34,7 @@ def showHumidity(lcd, humidity, CGRAMcharPos = 1):
 def showLight(lcd, light, CGRAMcharPos = 2):
     lcdLock.acquire()
     
-    lcd.printAtPos(lcd.CGRAMchar[CGRAMcharPos], 0, 1)
+    lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 1)
     
     lightString = str(light)
     #global lightDigits
@@ -46,6 +46,6 @@ def showLight(lcd, light, CGRAMcharPos = 2):
 def showStatus(lcd, wifiStatus, lockedStatus):
     lcdLock.acquire()
     
-    #lcd.printAtPos(lcd.CGRAMchar[CGRAMcharPos], 0, 1)
+    #lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 1)
     
     lcdLock.release()
