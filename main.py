@@ -66,7 +66,7 @@ def toggleOnOff():
     lcd.clear()
 
     if (abilitato):
-        lcd.printAtPos(lcdi2c.CGRAM_CHAR[1], lcd.nCols-1, 0) #EXCLAMATION
+        lcd.printAtPos(lcdi2c.CGRAM[1], lcd.nCols-1, 0) #EXCLAMATION
         print("Sistema abilitato")
     else:
         stopAlarm()
@@ -135,17 +135,19 @@ def flashLed(led, flashFrequency):
         sleep(1000//flashFrequency)
         
 def initLCD(port = I2C0):
-    lcdObj = lcdi2c.LCDI2C(port, lcd_cols=16, lcd_rows=2)
+    lcdObj = lcdi2c.LCDI2C(port, nCols=16, nRows=2)
     if (port == None):
         return lcdObj
     
     lcdObj.prepare()
-    lcdObj.writeCGRAM(chars.SMILEY_FACE, 0)
-    lcdObj.writeCGRAM(chars.BIG_EXCLAMATION, 1)
-    lcdObj.writeCGRAM(chars.TEMPERATURE, 2)
-    lcdObj.writeCGRAM(chars.HUMIDITY, 3)
-    lcdObj.writeCGRAM(chars.LIGHT, 4)
-    lcdObj.writeCGRAM(chars.CELSIUS, 5)
+    lcdObj.writeCGRAM(chars.TEMPERATURE, 0)
+    lcdObj.writeCGRAM(chars.HUMIDITY, 1)
+    lcdObj.writeCGRAM(chars.LIGHT, 2)
+    lcdObj.writeCGRAM(chars.CELSIUS, 3)
+    lcdObj.writeCGRAM(chars.EXCLAMATION, 4)
+    lcdObj.writeCGRAM(chars.UNLOCKED, 5)
+    lcdObj.writeCGRAM(chars.WIFI, 6)
+    lcdObj.writeCGRAM(chars.LOCKED, 7) #this acts as a temp buffer
     
     return lcdObj
 

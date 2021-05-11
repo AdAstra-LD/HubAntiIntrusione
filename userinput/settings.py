@@ -9,12 +9,12 @@ SYSTEM_PROTECTED = 1
 PASSWORD_MAXLEN = 8
 
 def userSetup(lcd, pad):
-    strm = flash.FlashFileStream(memmap.ESP32_BASEADDR, 9)
-    strm[0] = 0
+    flashmem = flash.FlashFileStream(memmap.ESP32_BASEADDR, 9)
+    flashmem[0] = SYSTEM_UNINITIALIZED  #PER FARE IN MODO CHE LA PASSWORD SIA SEMPRE CHIESTA
     
     lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
     sleep(500)
-    systemStatus = strm.read_byte()
+    systemStatus = flashmem.read_byte()
     
     if systemStatus == SYSTEM_UNINITIALIZED:
         lcd.clear()
@@ -37,19 +37,25 @@ def passwordScreen(lcd, pad):
     lcd.printLine("C=Cancel  D=Done", row = 1)
     lcd.returnHome()
     lcd.print("  PW: ")
-    lcd.cursorConfig(True, True, True)
+    lcd.cursorConfig(True, True, True) #Imposta il cursore lampeggiante
     
-    inputStartPos = lcd.cursorPos[0]
-    password = []
-    val = ""
+    inputStartPos = lcd.cursorPos[0] #Memorizza la posizione iniziale di inserimento
+    password = []                       #crea una lista vuota per contenere la password
     
     while (True):
         val = pad.scan()
-        ## ATTENZIONE ALLE PRESSIONI RIPETUTE...
+        posInPassword = lcd.cursorPos[0] - inputStartPos
+        
         if isNumber(val):
             if len(password) < PASSWORD_MAXLEN:
-                password.append(val)
+                print("pos in password: " + str(posInPassword) + "  pw len: " + str(len(password)))
+                if posInPassword > len(password)-1:
+                    password.append(val)
+                else:
+                    password[posInPassword] = val
+                    
                 lcd.print(val)
+            print("La password attuale e': " + str(password))
         elif val == 'D':
             if len(password) == 0:
                 lcd.printLine("Proceed with no\npword?  1=Y  0=N")
@@ -61,26 +67,23 @@ def passwordScreen(lcd, pad):
                 lcd.printLine("Confirm " + str("".join(password)) + "\n" + "1=Yes  0=No")
                 lcd.moveCursor(lcd.nCols-1, lcd.nRows-1)
                 ##GET ONE KEYPRESS
-        else:
-            posInPassword = lcd.cursorPos[0] - inputStartPos
+        elif val == 'C':
+            if posInPassword > 0:
+                lcd.shift(-1)
+                password.pop(posInPassword - 1)
+                whitespaces = ' ' * (PASSWORD_MAXLEN-len(password))
+                remaining = password[posInPassword-1:]
+                
+                x = lcd.cursorPos[0]
+                lcd.print(str("".join(remaining) + whitespaces))
+                lcd.moveCursor(x, lcd.cursorPos[1])
+        elif val == '*':
+            if(posInPassword > 0):
+                lcd.shift(-1) #shift sinistra 
+        elif val == '#':
+            if(posInPassword < len(password)):
+                lcd.shift(1) #shift destra 
             
-            print(str(posInPassword))
-            if val == 'C':
-                if posInPassword > 0:
-                    lcd.shift(-1)
-                    password.pop(posInPassword - 1)
-                    whitespaces = ' ' * (PASSWORD_MAXLEN-len(password))
-                    remaining = password[posInPassword-1:]
-                    
-                    x = lcd.cursorPos[0]
-                    lcd.print(str("".join(remaining) + whitespaces))
-                    lcd.moveCursor(x, lcd.cursorPos[1])
-            elif val == '*':
-                if(posInPassword > 0):
-                    lcd.shift(-1)
-            elif val == '#':
-                if(posInPassword < len(password)):
-                    lcd.shift(1)
 
 def isNumber(s):
     try:
