@@ -13,27 +13,41 @@ import display.specialChars as chars
 import display.localDashboard as ui
 import userinput.settings as settings
 import userinput.keypad as keypad
+import communication.comm as comm
 
 pinAlarmLed = A0    
-pinEnableLed = A1
+pinEnableLed = D23
 pinBuzzer = D13.PWM
 pinPhotoresist = A4
 
 pinIR = A7
-pinEnButton = D9
+pinEnButton = D22
 
 initialFreq = 150;
 abilitato = False;
 audioEnable = True;
 flashEnable = True;
 
+global lcd
+
+def readAmbientLight():
+    while True:
+        valore = 4096-adc.read(pinPhotoresist)
+        string = str(round(100*valore/4095)) + "%  "
+        
+        lcd.returnHome()
+        lcd.print(string)
+        sleep(300)
+
 def initIO():
     streams.serial(baud = 100000)
     
     global lcd
-    lcd = initLCD(I2C0)
-    pad = keypad.KeyPad(keypad.PINSETUP_GPIOEXT_D15__D05)
-    settings.userSetup(lcd, pad)
+    lcd = initLCD(I2C2)
+    
+    keypadPinSetup = (A2, A3, D0, D4, D5, D18, D19, D21)
+    #pad = keypad.KeyPad(keypadPinSetup)
+    #settings.userSetup(lcd, pad)
     
     print("Setting up pins...")
     pinMode(pinAlarmLed, OUTPUT)
@@ -48,10 +62,8 @@ def initIO():
     digitalWrite(pinEnableLed, LOW)
     digitalWrite(pinAlarmLed, LOW)
     
-    #while True:
-    #    pl = 4095-adc.read(pinPhotoresist)
-    #    print(str(100*pl//4095) + "%")
-    #    sleep(500)
+    #comm.AlarmComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
+    #comm.runThreadedTask(readAmbientLight)
 
 def toggleOnOff():
     global audioEnable
@@ -66,7 +78,7 @@ def toggleOnOff():
     lcd.clear()
 
     if (abilitato):
-        lcd.printAtPos(lcd.CGRAM[1], lcd.nCols-1, 0) #EXCLAMATION
+        lcd.printAtPos(lcd.CGRAM[4], lcd.nCols-1, 0) #EXCLAMATION
         print("Sistema abilitato")
     else:
         stopAlarm()
@@ -147,9 +159,10 @@ def initLCD(port = I2C0):
     lcdObj.writeCGRAM(chars.EXCLAMATION, 4)
     lcdObj.writeCGRAM(chars.UNLOCKED, 5)
     lcdObj.writeCGRAM(chars.WIFI, 6)
-    lcdObj.writeCGRAM(chars.LOCKED, 7) #this acts as a temp buffer
+    #lcdObj.writeCGRAM(chars.LOCKED, 7) #this acts as a temp buffer
     
     return lcdObj
+
 
 initIO()
 onPinRise(pinEnButton, toggleOnOff)

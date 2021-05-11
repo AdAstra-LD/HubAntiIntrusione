@@ -1,6 +1,7 @@
 import memory.customflash as flash
 import memory.memorymap as memmap
 import userinput.keypad as pad
+import display.specialChars as chars
 
 SYSTEM_UNINITIALIZED = 0
 SYSTEM_UNPROTECTED = 1
@@ -21,7 +22,9 @@ def userSetup(lcd, pad):
         
         lcd.printLine("Welcome!", align = "C")
         lcd.shift()
-        lcd.print(lcd.CGRAMchar[0]) #SmileyFace
+        
+        lcd.writeCGRAM(chars.SMILEYFACE, 7) 
+        lcd.print(lcd.CGRAM[7]) #SmileyFace
         sleep(1500)
         
         lcd.printLine("There are a few\nthings to set up")
