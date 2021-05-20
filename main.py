@@ -47,8 +47,8 @@ def initIO():
     lcd = initLCD(I2C2)
     
     keypadPinSetup = (A0, A1, D25, D26, D27, D14, D12, D13)
-    #pad = keypad.KeyPad(keypadPinSetup)
-    #settings.userSetup(lcd, pad)
+    pad = keypad.KeyPad(keypadPinSetup)
+    settings.userSetup(lcd, pad)
     
     print("Setting up output pins...")
     pinMode(pinAlarmLed, OUTPUT)

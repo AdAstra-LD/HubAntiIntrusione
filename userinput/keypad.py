@@ -73,9 +73,10 @@ class KeyPad():
 
     def _readCol(self):
         colNumber = 0
+        buffer = None
         
-        for col in COLS:
-            buffer = self._readRow(colNumber, col)
+        for charTuple in COLS:
+            buffer = self._readRow(colNumber, charTuple)
             
             if buffer != NO_BUTTON_PRESSED:
                 return buffer
@@ -85,14 +86,11 @@ class KeyPad():
         #Restituisce NONE se non rileva pressioni
     
     def _readRow(self, rowNumber, charTuple):
-        self._setRow(rowNumber)
+        for x in range(NUM_ROWS):
+            digitalWrite(self._pins[x], HIGH) if (x == rowNumber) else digitalWrite(self._pins[x], LOW)
         
         for x in range(NUM_ROWS):
             if(digitalRead(self._pins[-4 + x])): #Leggi il 4-ultimo, poi il 3-ultimo, poi il penultimo
                 return charTuple[x] # Appena leggi valore alto, restituisci il carattere associato
         
         return NO_BUTTON_PRESSED
-
-    def _setRow(self, num):
-        for x in range(NUM_ROWS):
-            digitalWrite(self._pins[x], HIGH) if (x == num) else digitalWrite(self._pins[x], LOW)
