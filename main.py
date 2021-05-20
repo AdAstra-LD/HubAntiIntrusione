@@ -15,13 +15,14 @@ import userinput.settings as settings
 import userinput.keypad as keypad
 import communication.comm as comm
 
-pinAlarmLed = A0    
+pinAlarmLed = D5    
 pinEnableLed = D23
-pinBuzzer = D13.PWM
-pinPhotoresist = A4
 
-pinIR = A7
-pinEnButton = D22
+pinBuzzer = D15.PWM
+pinPhotoresist = A2
+
+pinIR = D22
+pinEnButton = D21
 
 initialFreq = 150;
 abilitato = False;
@@ -45,16 +46,17 @@ def initIO():
     global lcd
     lcd = initLCD(I2C2)
     
-    keypadPinSetup = (A2, A3, D0, D4, D5, D18, D19, D21)
+    keypadPinSetup = (A0, A1, D25, D26, D27, D14, D12, D13)
     #pad = keypad.KeyPad(keypadPinSetup)
     #settings.userSetup(lcd, pad)
     
-    print("Setting up pins...")
+    print("Setting up output pins...")
     pinMode(pinAlarmLed, OUTPUT)
     pinMode(pinEnableLed, OUTPUT)
     pinMode(pinBuzzer, OUTPUT)
-    pinMode(pinPhotoresist, INPUT)
     
+    print("Setting up input pins...")
+    pinMode(pinPhotoresist, INPUT)
     pinMode(pinIR, INPUT)
     pinMode(pinEnButton, INPUT_PULLDOWN)
     

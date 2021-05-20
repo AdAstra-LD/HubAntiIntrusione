@@ -23,7 +23,7 @@ def userSetup(lcd, pad):
         lcd.printLine("Welcome!", align = "C")
         lcd.shift()
         
-        lcd.writeCGRAM(chars.SMILEYFACE, 7) 
+        lcd.writeCGRAM(chars.SMILEY_FACE, 7) 
         lcd.print(lcd.CGRAM[7]) #SmileyFace
         sleep(1500)
         
