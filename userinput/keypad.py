@@ -72,16 +72,16 @@ class KeyPad():
                         return status
 
     def _readCol(self):
-        colNumber = 0
+        rowNumber = 0
         buffer = None
         
         for charTuple in COLS:
-            buffer = self._readRow(colNumber, charTuple)
+            buffer = self._readRow(rowNumber, charTuple)
             
             if buffer != NO_BUTTON_PRESSED:
                 return buffer
                 
-            colNumber += 1
+            rowNumber += 1
         
         #Restituisce NONE se non rileva pressioni
     
