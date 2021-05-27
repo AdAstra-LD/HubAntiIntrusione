@@ -56,20 +56,27 @@ class KeyPad():
             pinMode(self._pins[-1], INPUT_PULLDOWN) if (ctr > 3) else pinMode(self._pins[-1], OUTPUT)
             ctr += 1
     
-    def scan(self):
+    def scan(self, validChars = None):
+        ##DOCUMENTARE!!!
+        
         global lastChangeTime
         
         while True:
             nowTime = timers.now()              #Ottieni millisecondi passati dall'avvio del programma
             if(nowTime-lastChangeTime > 10):    #se ne sono passati almeno 10
                 lastChangeTime=nowTime          #aggiorna il tempo 
-                status = self._readCol()        #scansiona pressioni
+                value = self._readCol()        #scansiona pressioni
                 
-                if status != lastValue:         #evita duplicati
-                    lastValue = status
+                if value != lastValue:         #evita duplicati
+                    lastValue = value
                     
-                    if status != None:
-                        return status
+                    if value != None:
+                        if validChars == None:
+                            return value
+                        else:
+                            for validChar in validChars:
+                                if value == validChar:
+                                    return value
 
     def _readCol(self):
         rowNumber = 0

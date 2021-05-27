@@ -14,6 +14,7 @@ import display.localDashboard as ui
 import userinput.settings as settings
 import userinput.keypad as keypad
 import communication.comm as comm
+import glob
 
 pinAlarmLed = D5    
 pinEnableLed = D23
@@ -23,32 +24,26 @@ pinPhotoresist = A2
 
 pinIR = D22
 pinEnButton = D21
+pinSettingsButton = D2
 
 initialFreq = 150;
-abilitato = False;
-audioEnable = True;
-flashEnable = True;
-
-global lcd
 
 def readAmbientLight():
     while True:
         valore = 4096-adc.read(pinPhotoresist)
         string = str(round(100*valore/4095)) + "%  "
         
-        lcd.returnHome()
-        lcd.print(string)
+        glob.lcd.returnHome()
+        glob.lcd.print(string)
         sleep(300)
 
 def initIO():
     streams.serial(baud = 100000)
     
-    global lcd
-    lcd = initLCD(I2C2)
+    glob.lcd = initLCD(I2C2)
     
     keypadPinSetup = (A0, A1, D25, D26, D27, D14, D12, D13)
-    pad = keypad.KeyPad(keypadPinSetup)
-    settings.userSetup(lcd, pad)
+    glob.pad = keypad.KeyPad(keypadPinSetup)
     
     print("Setting up output pins...")
     pinMode(pinAlarmLed, OUTPUT)
@@ -59,68 +54,62 @@ def initIO():
     pinMode(pinPhotoresist, INPUT)
     pinMode(pinIR, INPUT)
     pinMode(pinEnButton, INPUT_PULLDOWN)
+    pinMode(pinSettingsButton, INPUT_PULLDOWN)
     
     print("Turning LEDs off...")
     digitalWrite(pinEnableLed, LOW)
     digitalWrite(pinAlarmLed, LOW)
     
+    glob.lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
+    sleep(750)
+    settings.load()
+    
     #comm.AlarmComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
     #comm.runThreadedTask(readAmbientLight)
 
 def toggleOnOff():
-    global audioEnable
-    global flashEnable
-    
     pinToggle(pinEnableLed)
-    status = abilitato
-    abilitato = not status
-    audioEnable = not status
-    flashEnable = not status
+    status = glob.alarmEnable
+    glob.alarmEnable = not status
+    glob.audioEnable = not status
+    glob.flashEnable = not status
     
-    lcd.clear()
+    glob.lcd.clear()
 
-    if (abilitato):
-        lcd.printAtPos(lcd.CGRAM[4], lcd.nCols-1, 0) #EXCLAMATION
+    if (glob.alarmEnable):
+        glob.lcd.printAtPos(glob.lcd.CGRAM[4], glob.lcd.nCols-1, 0) #EXCLAMATION
         print("Sistema abilitato")
     else:
         stopAlarm()
-        lcd.printAtPos(' ', lcd.nCols-1, 0)
+        glob.lcd.printAtPos(' ', glob.lcd.nCols-1, 0)
         print("Sistema disabilitato")
 
 def intrusione():
-    global audioEnable
-    global flashEnable
-    
-    if (abilitato):
+    if (glob.alarmEnable):
         print("Intrusione!!!")
-        audioEnable = True
-        flashEnable = True
+        glob.audioEnable = True
+        glob.flashEnable = True
         thread(soundAlarm)
         thread(flashLed, pinAlarmLed, 25)
-        lcd.printLine("!  Intruder  !", 1, align = "CENTER")
+        glob.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
     else:
         print("Movimento rilevato... ma l'allarme non e' inserito")
 
 def stopAlarm():
-    global audioEnable
-    global flashEnable
-    
     print("Stopping alarm...")
-    audioEnable = False
-    flashEnable = False
+    glob.audioEnable = False
+    glob.flashEnable = False
     
     pwm.write(pinBuzzer, 0, 0)
     digitalWrite(pinAlarmLed, LOW)
 
 def soundAlarm(initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
-    global audioEnable
-    
     if initialFreq == 0 or delay == 0 or increment == 0:
         return
         
     currentFreq = initialFreq
     
-    while (audioEnable):
+    while (glob.audioEnable):
         #we are using MICROS so every sec is 1000000 of micros. 
         #// is the int division, pwm.write period doesn't accept floats
         period=1000000//currentFreq
@@ -139,12 +128,10 @@ def soundAlarm(initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
         sleep(delay)
 
 def flashLed(led, flashFrequency):
-    global flashEnable
-    
     if (flashFrequency == 0):
         flashFrequency = 1
         
-    while (flashEnable):
+    while (glob.flashEnable):
         pinToggle(led)
         sleep(1000//flashFrequency)
         
@@ -165,8 +152,8 @@ def initLCD(port = I2C0):
     
     return lcdObj
 
-
 initIO()
 onPinRise(pinEnButton, toggleOnOff)
+onPinRise(pinSettingsButton, settings.userSetup)
 onPinRise(pinIR, intrusione)
 onPinFall(pinIR, stopAlarm)
