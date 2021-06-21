@@ -130,10 +130,3 @@ def passwordScreen():
     #}
     print("Setup completed")
     flashMem.flush()
-
-def isNumber(s):
-    try:
-        int(s)
-        return True
-    except ValueError:
-        return False

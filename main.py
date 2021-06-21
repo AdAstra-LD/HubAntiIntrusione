@@ -4,7 +4,6 @@
 import streams
 import threading
 
-import adc
 import pwm
 import i2c
 
@@ -14,19 +13,15 @@ import display.localDashboard as ui
 import userinput.settings as settings
 import userinput.keypad as keypad
 import communication.comm as comm
+import led
 import glob
 
-pinAlarmLed = D5    
-pinEnableLed = D23
-
 pinBuzzer = D15.PWM
-pinPhotoresist = A2
+#pinPhotoresist = A2
 
-pinIR = D22
+pinIR = D5
 pinEnButton = D21
-pinSettingsButton = D2
-
-initialFreq = 150;
+#pinSettingsButton = D2
 
 def readAmbientLight():
     while True:
@@ -38,60 +33,52 @@ def readAmbientLight():
         sleep(300)
 
 def initIO():
-    streams.serial(baud = 100000)
+    streams.serial()
     
     glob.lcd = initLCD(I2C2)
     
     keypadPinSetup = (A0, A1, D25, D26, D27, D14, D12, D13)
     glob.pad = keypad.KeyPad(keypadPinSetup)
     
-    print("Setting up output pins...")
-    pinMode(pinAlarmLed, OUTPUT)
-    pinMode(pinEnableLed, OUTPUT)
+    print("Setting up LED...")
+    glob.setupRGBled(D22, D23, D1) #R, G, B
+    led.RGBoff()
+    
+    print("Setting up buzzer...")
     pinMode(pinBuzzer, OUTPUT)
     
     print("Setting up input pins...")
-    pinMode(pinPhotoresist, INPUT)
     pinMode(pinIR, INPUT)
-    pinMode(pinEnButton, INPUT_PULLDOWN)
-    pinMode(pinSettingsButton, INPUT_PULLDOWN)
+    #pinMode(pinPhotoresist, INPUT)
+    #pinMode(pinSettingsButton, INPUT_PULLDOWN)
+    pinMode(pinEnButton, INPUT_PULLUP)
     
-    print("Turning LEDs off...")
-    digitalWrite(pinEnableLed, LOW)
-    digitalWrite(pinAlarmLed, LOW)
-    
-    glob.lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
     sleep(750)
+    print("Setup completed")
     settings.load()
     
     #comm.AlarmComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
     #comm.runThreadedTask(readAmbientLight)
 
 def toggleOnOff():
-    pinToggle(pinEnableLed)
     status = glob.alarmEnable
     glob.alarmEnable = not status
     glob.audioEnable = not status
     glob.flashEnable = not status
-    
-    glob.lcd.clear()
 
     if (glob.alarmEnable):
-        glob.lcd.printAtPos(glob.lcd.CGRAM[4], glob.lcd.nCols-1, 0) #EXCLAMATION
+        led.RGBoff()
         print("Sistema abilitato")
     else:
         stopAlarm()
-        glob.lcd.printAtPos(' ', glob.lcd.nCols-1, 0)
+        led.RGBset(0, 0, 1)
         print("Sistema disabilitato")
 
 def intrusione():
     if (glob.alarmEnable):
-        print("Intrusione!!!")
-        glob.audioEnable = True
-        glob.flashEnable = True
+        #led.flash(glob.pinTuple[0], 25)
         thread(soundAlarm)
-        thread(flashLed, pinAlarmLed, 25)
-        glob.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
+        print("Intrusione!!!")
     else:
         print("Movimento rilevato... ma l'allarme non e' inserito")
 
@@ -101,12 +88,13 @@ def stopAlarm():
     glob.flashEnable = False
     
     pwm.write(pinBuzzer, 0, 0)
-    digitalWrite(pinAlarmLed, LOW)
+    led.RGBset(0, 'x', 'x')
 
 def soundAlarm(initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
-    if initialFreq == 0 or delay == 0 or increment == 0:
+    if initialFreq == 0 or initialFreq < finalFreq or delay == 0 or increment == 0:
         return
         
+    glob.audioEnable = True
     currentFreq = initialFreq
     
     while (glob.audioEnable):
@@ -124,16 +112,8 @@ def soundAlarm(initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
         if abs(currentFreq - finalFreq) < abs(increment):
             currentFreq = initialFreq
             print("ping")
-            
-        sleep(delay)
-
-def flashLed(led, flashFrequency):
-    if (flashFrequency == 0):
-        flashFrequency = 1
         
-    while (glob.flashEnable):
-        pinToggle(led)
-        sleep(1000//flashFrequency)
+        sleep(delay)
         
 def initLCD(port = I2C0):
     lcdObj = lcdi2c.LCDI2C(port, nCols=16, nRows=2)
@@ -153,7 +133,8 @@ def initLCD(port = I2C0):
     return lcdObj
 
 initIO()
-onPinRise(pinEnButton, toggleOnOff)
-onPinRise(pinSettingsButton, settings.userSetup)
+#PINS MUST BE ALREADY INITIALIZED, BEFORE THESE INTERRUPTS ARE SET UP
+onPinFall(pinEnButton, toggleOnOff)
+#onPinRise(pinSettingsButton, settings.userSetup)
 onPinRise(pinIR, intrusione)
 onPinFall(pinIR, stopAlarm)

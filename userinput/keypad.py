@@ -74,9 +74,8 @@ class KeyPad():
                         if validChars == None:
                             return value
                         else:
-                            for validChar in validChars:
-                                if value == validChar:
-                                    return value
+                            if value in validChars:
+                                return value
 
     def _readCol(self):
         rowNumber = 0

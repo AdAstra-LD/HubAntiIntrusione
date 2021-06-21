@@ -6,6 +6,7 @@ from espressif.esp32net import esp32wifi as wifi_driver
 
 import threading
 import streams
+import glob
 
 wifi_driver.auto_init()
 
@@ -46,6 +47,3 @@ class AlarmComm():
             print(".")
         except Exception as e:
             sleep(150)
-    
-    def runThreadedTask(self, task):
-        thread(task)
