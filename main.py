@@ -88,9 +88,12 @@ def intrusione():
         glob.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
     else:
         print("Movimento rilevato... ma l'allarme non e' inserito")
+        glob.lcd.printLine("Alarm busy...", 1, align = "CENTER")
 
 def stopAlarm():
     print("Alarm signal down...")
+    glob.lcd.clear()
+    
     glob.audioEnable = False
     glob.flashEnable = False
     
