@@ -10,6 +10,9 @@ pinTuple = None
 
 #Utilities
 def isNumber(s):
+    if s == None:
+        return False
+        
     try:
         int(s)
         return True
@@ -22,8 +25,9 @@ def runThreadedTask(self, task):
 def setupRGBled (R, G, B):
     pinMode(R, OUTPUT)
     pinMode(G, OUTPUT)
-    #pinMode(B, OUTPUT)
+    pinMode(B, OUTPUT)
     
-    print("LED pins are set up.")
+    print("LED pins are set up: " + str(R) + ", " + str(G) + ", " + str(B))
     
+    global pinTuple
     pinTuple = (R, G, B)

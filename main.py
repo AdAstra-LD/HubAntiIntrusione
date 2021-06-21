@@ -40,7 +40,7 @@ def initIO():
     glob.pad = keypad.KeyPad(invert = True)
     
     print("Setting up LED...")
-    glob.setupRGBled(D22, D23, D1) #R, G, B
+    glob.setupRGBled(D4, D22, D23) #R, G, B
     led.RGBoff()
     
     print("Setting up buzzer...")
@@ -66,28 +66,29 @@ def toggleOnOff():
     glob.flashEnable = not status
 
     if (glob.alarmEnable):
-        led.RGBoff()
+        led.RGBset(0, 0, 1)
         print("Sistema abilitato")
     else:
+        led.memorizeColor(0, 0, 0)
+        led.RGBoff()
         stopAlarm()
-        led.RGBset(0, 0, 1)
         print("Sistema disabilitato")
 
 def intrusione():
     if (glob.alarmEnable):
-        #led.flash(glob.pinTuple[0], 25)
+        led.flash(glob.pinTuple[0], 20)
         thread(soundAlarm)
         print("Intrusione!!!")
     else:
         print("Movimento rilevato... ma l'allarme non e' inserito")
 
 def stopAlarm():
-    print("Stopping alarm...")
+    print("Alarm signal down...")
     glob.audioEnable = False
     glob.flashEnable = False
     
     pwm.write(pinBuzzer, 0, 0)
-    led.RGBset(0, 'x', 'x')
+    led.RGBset(R = 0)
 
 def soundAlarm(initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
     if initialFreq == 0 or initialFreq < finalFreq or delay == 0 or increment == 0:
