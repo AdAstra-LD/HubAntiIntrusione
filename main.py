@@ -53,6 +53,7 @@ def initIO():
     #pinMode(pinSettingsButton, INPUT_PULLDOWN)
     pinMode(pinEnButton, INPUT_PULLUP)
     
+    glob.lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
     sleep(750)
     print("Setup completed")
     settings.load()
@@ -65,14 +66,18 @@ def toggleOnOff():
     glob.alarmEnable = not status
     glob.audioEnable = not status
     glob.flashEnable = not status
+    
+    glob.lcd.clear()
 
     if (glob.alarmEnable):
         led.RGBset(0, 0, 1)
         print("Sistema abilitato")
+        glob.lcd.printAtPos(glob.lcd.CGRAM[4], glob.lcd.nCols-1, 0) #EXCLAMATION
     else:
         led.memorizeColor(0, 0, 0)
         led.RGBoff()
         stopAlarm()
+        glob.lcd.printAtPos(' ', glob.lcd.nCols-1, 0)
         print("Sistema disabilitato")
 
 def intrusione():
@@ -80,6 +85,7 @@ def intrusione():
         led.flash(glob.pinTuple[0], 20)
         thread(soundAlarm)
         print("Intrusione!!!")
+        glob.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
     else:
         print("Movimento rilevato... ma l'allarme non e' inserito")
 
