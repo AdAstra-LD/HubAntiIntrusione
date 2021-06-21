@@ -20,12 +20,10 @@
 
 import timers
 
-lastChangeTime=0
-keyPressed=0
+lastChangeTime = 0
+keyPressed = 0
 
-PINSETUP_DEFAULT =                      (D14, D27, D26, D25, D13, D21, D22, D23)
-PINSETUP_COMPACT_D15D02 =               (D15, D2, D0, D4, D16, D17, D5, D18)
-PINSETUP_GPIOEXT_D15__D05 =             (D15, D2, D0, D4, D5, D18, D19, D21)
+PINSETUP_DEFAULT = (A0, A1, D25, D26, D27, D14, D12, D13)
 
 NUM_ROWS = 4
 NO_BUTTON_PRESSED = -1
@@ -40,8 +38,11 @@ COLS = (VALUES_R1, VALUES_R2, VALUES_R3, VALUES_R4)
 lastValue = ""
 
 class KeyPad():
-    def __init__(self, pinTuple = PINSETUP_DEFAULT):
+    def __init__(self, pinTuple = PINSETUP_DEFAULT, invert = False):
         self._pins = []
+        
+        if invert:
+            pinTuple = reversed(pinTuple)
         
         ctr = 0
         for x in pinTuple:

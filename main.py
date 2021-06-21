@@ -37,8 +37,7 @@ def initIO():
     
     glob.lcd = initLCD(I2C2)
     
-    keypadPinSetup = (A0, A1, D25, D26, D27, D14, D12, D13)
-    glob.pad = keypad.KeyPad(keypadPinSetup)
+    glob.pad = keypad.KeyPad(invert = True)
     
     print("Setting up LED...")
     glob.setupRGBled(D22, D23, D1) #R, G, B
