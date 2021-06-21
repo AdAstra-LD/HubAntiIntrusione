@@ -61,7 +61,7 @@ def passwordScreen():
             val = glob.pad.scan()
             posInPassword = glob.lcd.cursorPos[0] - inputStartPos
             
-            if isNumber(val):
+            if glob.isNumber(val):
                 if len(password) < PASSWORD_MAXLEN:
                     print("pos in password: " + str(posInPassword) + "  pw len: " + str(len(password)))
                     if posInPassword > len(password)-1:

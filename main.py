@@ -6,6 +6,7 @@ import threading
 
 import pwm
 import i2c
+#import adc
 
 import display.LCDI2C as lcdi2c
 import display.specialChars as chars
@@ -23,19 +24,19 @@ pinIR = D5
 pinEnButton = D21
 #pinSettingsButton = D2
 
-def readAmbientLight():
-    while True:
-        valore = 4096-adc.read(pinPhotoresist)
-        string = str(round(100*valore/4095)) + "%  "
-        
-        glob.lcd.returnHome()
-        glob.lcd.print(string)
-        sleep(300)
+#def readAmbientLight():
+#    while True:
+#        valore = 4096-adc.read(pinPhotoresist)
+#        string = str(round(100*valore/4095)) + "%  "
+#        
+#        glob.lcd.returnHome()
+#        glob.lcd.print(string)
+#        sleep(300)
 
 def initIO():
     streams.serial()
     
-    glob.lcd = initLCD(I2C2)
+    glob.lcd = initLCD(I2C1)
     
     glob.pad = keypad.KeyPad(invert = True)
     
