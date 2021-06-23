@@ -11,9 +11,11 @@ import i2c
 import display.LCDI2C as lcdi2c
 import display.specialChars as chars
 import display.localDashboard as ui
+
 import userinput.settings as settings
 import userinput.keypad as keypad
 import communication.comm as comm
+
 import led
 import glob
 
@@ -25,7 +27,7 @@ pinEnButton = D21
 #pinSettingsButton = D2
 
 #def readAmbientLight():
-#    while True:
+#    while glob.enable_readAmbientLight:
 #        valore = 4096-adc.read(pinPhotoresist)
 #        string = str(round(100*valore/4095)) + "%  "
 #        
@@ -59,7 +61,7 @@ def initIO():
     settings.load()
     
     #comm.AlarmComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
-    #comm.runThreadedTask(readAmbientLight)
+    #thread(readAmbientLight)
 
 def toggleOnOff():
     status = glob.alarmEnable

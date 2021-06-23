@@ -3,6 +3,11 @@ alarmEnable = False;
 audioEnable = True;
 flashEnable = True;
 
+#Global Vars for tasks
+enable_readAmbientLight = True
+enable_readTemperature = True
+enable_readHumidity = True
+
 #Peripherals
 lcd = None
 pad = None
@@ -18,9 +23,6 @@ def isNumber(s):
         return True
     except ValueError:
         return False
-
-def runThreadedTask(self, task):
-    thread(task)
 
 def setupRGBled (R, G, B):
     pinMode(R, OUTPUT)

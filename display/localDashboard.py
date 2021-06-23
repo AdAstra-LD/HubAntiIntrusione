@@ -10,6 +10,8 @@ def showTemperature(lcd, temperature, CGRAMcharPos = 0, celsiusSymbolPos = 3):
     lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 0) #Temperature Symbol
     #READ ACTUAL TEMPERATURE!!!
     
+    
+    #print value
     tempString = str(temperature)
     
     global temperDigits
@@ -24,6 +26,8 @@ def showHumidity(lcd, humidity, CGRAMcharPos = 1):
     
     lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 3 + temperDigits, 0)
     
+    
+    #print value
     humidString = str(humidity)
     global humidDigits
     humidDigits = len(humidString)
@@ -36,6 +40,8 @@ def showLight(lcd, light, CGRAMcharPos = 2):
     
     lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 1)
     
+    
+    #print value
     lightString = str(light)
     #global lightDigits
     #humidDigits = len(str(humidity))
