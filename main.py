@@ -15,8 +15,8 @@ import userinput.settings as settings
 import userinput.keypad as keypad
 import communication.comm as comm
 
-import led
-import buzzer
+import alarm.led as led
+import alarm.buzzer as buzzer
 import glob
 
 pinBuzzer = D15.PWM
