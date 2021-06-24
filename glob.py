@@ -1,3 +1,5 @@
+import threading
+
 #Global Vars
 alarmEnable = False;
 audioEnable = True;
@@ -8,10 +10,13 @@ enable_readAmbientLight = True
 enable_readTemperature = True
 enable_readHumidity = True
 
+#Lock objects for threading
+lcdLock = threading.Lock()
+
 #Peripherals
 lcd = None
 pad = None
-pinTuple = None
+ledRGB = None
 
 #Utilities
 def isNumber(s):
@@ -23,13 +28,18 @@ def isNumber(s):
         return True
     except ValueError:
         return False
+        
+def pinToggleMulti (*args):
+    for pin in args:
+        pinToggle(pin)
 
-def setupRGBled (R, G, B):
-    pinMode(R, OUTPUT)
-    pinMode(G, OUTPUT)
-    pinMode(B, OUTPUT)
+def flashPins(flashFrequency, *args):
+    if (flashFrequency == 0):
+        flashFrequency = 1
     
-    print("LED pins are set up: " + str(R) + ", " + str(G) + ", " + str(B))
-    
-    global pinTuple
-    pinTuple = (R, G, B)
+    thread(timedRepeat, 1000//flashFrequency, flashEnable, pinToggleMulti, *args)
+
+def timedRepeat(timePeriod, runCondition, task, *args):
+    while runCondition:
+        task(*args)
+        sleep(timePeriod)

@@ -6,7 +6,6 @@ import threading
 
 import pwm
 import i2c
-#import adc
 
 import display.LCDI2C as lcdi2c
 import display.specialChars as chars
@@ -26,14 +25,6 @@ pinIR = D5
 pinEnButton = D21
 #pinSettingsButton = D2
 
-#def readAmbientLight():
-#    while glob.enable_readAmbientLight:
-#        valore = 4096-adc.read(pinPhotoresist)
-#        string = str(round(100*valore/4095)) + "%  "
-#        
-#        glob.lcd.returnHome()
-#        glob.lcd.print(string)
-#        sleep(300)
 
 def initIO():
     streams.serial()
@@ -42,9 +33,9 @@ def initIO():
     
     glob.pad = keypad.KeyPad(invert = True)
     
-    print("Setting up LED...")
-    glob.setupRGBled(D4, D22, D23) #R, G, B
-    led.RGBoff()
+    print("Setting up glob.ledRGB...")
+    glob.ledRGB = led.RGBLed(D4, D22, D23) #R, G, B
+    glob.ledRGB.RGBoff()
     
     print("Setting up buzzer...")
     pinMode(pinBuzzer, OUTPUT)
@@ -69,38 +60,44 @@ def toggleOnOff():
     glob.audioEnable = not status
     glob.flashEnable = not status
     
+    glob.lcdLock.acquire()
     glob.lcd.clear()
 
     if (glob.alarmEnable):
-        led.RGBset(0, 0, 1)
+        glob.ledRGB.RGBset(0, 0, 1)
         print("Sistema abilitato")
         glob.lcd.printAtPos(glob.lcd.CGRAM[4], glob.lcd.nCols-1, 0) #EXCLAMATION
     else:
-        led.memorizeColor(0, 0, 0)
-        led.RGBoff()
+        glob.ledRGB.memorizeColor(0, 0, 0)
+        glob.ledRGB.RGBoff()
         stopAlarm()
         glob.lcd.printAtPos(' ', glob.lcd.nCols-1, 0)
         print("Sistema disabilitato")
+        
+    glob.lcdLock.release()
 
 def intrusione():
     if (glob.alarmEnable):
-        led.flash(glob.pinTuple[0], 20)
-        thread(soundAlarm)
+        glob.ledRGB.flash(flashFrequency = 20, color = 'R')
+        #thread(soundAlarm)
         print("Intrusione!!!")
+        glob.lcdLock.acquire()
         glob.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
     else:
         print("Movimento rilevato... ma l'allarme non e' inserito")
+        glob.lcdLock.acquire()
         glob.lcd.printLine("Alarm busy...", 1, align = "CENTER")
 
 def stopAlarm():
     print("Alarm signal down...")
     glob.lcd.clear()
+    glob.lcdLock.release()
     
     glob.audioEnable = False
     glob.flashEnable = False
     
     pwm.write(pinBuzzer, 0, 0)
-    led.RGBset(R = 0)
+    glob.ledRGB.RGBset(R = 0)
 
 def soundAlarm(initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
     if initialFreq == 0 or initialFreq < finalFreq or delay == 0 or increment == 0:
@@ -146,6 +143,7 @@ def initLCD(port = I2C0):
 
 initIO()
 #PINS MUST BE ALREADY INITIALIZED, BEFORE THESE INTERRUPTS ARE SET UP
+
 onPinFall(pinEnButton, toggleOnOff)
 #onPinRise(pinSettingsButton, settings.userSetup)
 onPinRise(pinIR, intrusione)

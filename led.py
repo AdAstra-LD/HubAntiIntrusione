@@ -1,68 +1,65 @@
 import glob
 
-cur = [0, 0, 0]
-mem = [0, 0, 0]
-
-def RGBoff(pinTuple = None):
-    if (pinTuple == None):
-        pinTuple = glob.pinTuple
+class RGBLed:
+    def __init__(self, Rpin, Gpin, Bpin):
+        pinMode(Rpin, OUTPUT)
+        pinMode(Gpin, OUTPUT)
+        pinMode(Bpin, OUTPUT)
         
-    digitalWrite(pinTuple[0], LOW)
-    digitalWrite(pinTuple[1], LOW)
-    digitalWrite(pinTuple[2], LOW)
-    
-    cur = [0, 0, 0]
-    
-def RGBset(R = None, G = None, B = None, colorTuple = None, pinTuple = None): 
-    global cur
-    
-    if colorTuple == None:
-        colorTuple = (R, G, B)
-    
-    if (pinTuple == None):
-        pinTuple = glob.pinTuple
-    
-    for cIndex in range(3):
-        color = colorTuple[cIndex]
+        print("LED pins are set up: " + str(Rpin) + ", " + str(Gpin) + ", " + str(Bpin))
         
-        if glob.isNumber(color):
-            status = HIGH if(color > 0) else LOW
-            digitalWrite(pinTuple[cIndex], status)
-            cur[cIndex] = color
-
-def memorizeColor (R = None, G = None, B = None, colorTuple = None):
-    global mem
-    
-    if colorTuple == None:
-        colorTuple = (R, G, B)
-    
-    for index in range(3):
-        mem[index] = colorTuple[index]
-    
-def memorizeCurrentColor ():
-    global mem
-    global cur
-    
-    for index in range(3):
-        mem[index] = cur[index]
-
-def restoreColor (pinTuple = None):
-    global mem 
-    
-    RGBset(colorTuple = mem, pinTuple = pinTuple)
-
-def flash(ledPin, flashFrequency):
-    glob.flashEnable = True
-    thread(__flashTask, ledPin, flashFrequency)
-
-def __flashTask (ledPin, flashFrequency):    
-    if (flashFrequency == 0):
-        flashFrequency = 1
-    
-    memorizeCurrentColor()
-    RGBoff()
-    while (glob.flashEnable):
-        pinToggle(ledPin)
-        sleep(1000//flashFrequency)
+        self.cur = [0, 0, 0]
+        self.mem = [0, 0, 0]
+        self.pinTuple = (Rpin, Gpin, Bpin)
         
-    restoreColor()
+    def ledColorToPin(self, ledColor):
+        ledColorlow = ledColor.lower()
+        
+        if ledColorlow == 'r':
+            return self.pinTuple[0]
+        elif ledColorlow == 'g':
+            return self.pinTuple[1]
+        elif ledColorlow == 'b':
+            return self.pinTuple[2]
+        
+        return None
+
+    def RGBoff(self):
+        digitalWrite(self.pinTuple[0], LOW)
+        digitalWrite(self.pinTuple[1], LOW)
+        digitalWrite(self.pinTuple[2], LOW)
+        
+        self.cur = [0, 0, 0]
+    
+    def RGBset(self, R = None, G = None, B = None, colorTuple = None): 
+        if colorTuple == None:
+            colorTuple = (R, G, B)
+        
+        for cIndex in range(3):
+            color = colorTuple[cIndex]
+            
+            if glob.isNumber(color):
+                status = HIGH if(color > 0) else LOW
+                digitalWrite(self.pinTuple[cIndex], status)
+                self.cur[cIndex] = color
+    
+    def memorizeColor (self, R = None, G = None, B = None, colorTuple = None):
+        if colorTuple == None:
+            colorTuple = (R, G, B)
+        
+        for index in range(3):
+            self.mem[index] = colorTuple[index]
+    
+    def memorizeCurrentColor (self):
+        for index in range(3):
+            self.mem[index] = self.cur[index]
+    
+    def restoreColor (self):
+        self.RGBset(colorTuple = self.mem)
+    
+    def flash(self, flashFrequency = 20, color = 'R'):
+        self.memorizeCurrentColor()
+        self.RGBoff()
+        
+        glob.flashPin(self.ledColorToPin(color), flashFrequency)
+        self.restoreColor()

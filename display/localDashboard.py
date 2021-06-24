@@ -1,13 +1,31 @@
 import threading
+import adc
 
-temperDigits = 2
-humidDigits = 2
-lcdLock = threading.Lock()
+import glob
+
+sensorStorage = { }
+
+def readTemperature(i2c, temperDigits = 2, timePeriod = 15000):
+    pass
+
+def readHumidity(i2c, humidDigits = 2, timePeriod = 15000):
+    pass
+
+def readLight(pinPhotoresist, invert = False, keyName = "light"):
+    valore = adc.read(pinPhotoresist)
+    
+    if invert:
+        valore = 4096 - valore
+    
+    valore = round(100*valore/4095)
+    
+    sensorStorage[keyName] = valore
+    return valore #Percentage
 
 def showTemperature(lcd, temperature, CGRAMcharPos = 0, celsiusSymbolPos = 3):
-    lcdLock.acquire()
+    glob.lcdLock.acquire()
     
-    lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 0) #Temperature Symbol
+    glob.lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 0) #Temperature Symbol
     #READ ACTUAL TEMPERATURE!!!
     
     
@@ -17,14 +35,14 @@ def showTemperature(lcd, temperature, CGRAMcharPos = 0, celsiusSymbolPos = 3):
     global temperDigits
     temperDigits = len(tempString)
     
-    lcd.print(tempString) #ex.: 35 °C
-    lcd.print(lcd.CGRAM[celsiusSymbolPos])
-    lcdLock.release()
+    glob.lcd.print(tempString) #ex.: 35 °C
+    glob.lcd.print(lcd.CGRAM[celsiusSymbolPos])
+    glob.lcdLock.release()
     
 def showHumidity(lcd, humidity, CGRAMcharPos = 1):
-    lcdLock.acquire()
+    glob.lcdLock.acquire()
     
-    lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 3 + temperDigits, 0)
+    glob.lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 3 + temperDigits, 0)
     
     
     #print value
@@ -32,26 +50,24 @@ def showHumidity(lcd, humidity, CGRAMcharPos = 1):
     global humidDigits
     humidDigits = len(humidString)
     
-    lcd.print(humidString + "%") #ex. 46%
-    lcdLock.release()
+    glob.lcd.print(humidString + "%") #ex. 46%
+    glob.lcdLock.release()
     
 def showLight(lcd, light, CGRAMcharPos = 2):
-    lcdLock.acquire()
+    glob.lcdLock.acquire()
     
-    lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 1)
+    glob.lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 1)
     
-    
-    #print value
     lightString = str(light)
     #global lightDigits
     #humidDigits = len(str(humidity))
     
-    lcd.print(lightString + "%") #ex. 46%
-    lcdLock.release()
+    glob.lcd.print(lightString + "%") #ex. 46%
+    glob.lcdLock.release()
 
 def showStatus(lcd, wifiStatus, lockedStatus):
-    lcdLock.acquire()
+    glob.lcdLock.acquire()
     
-    #lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 1)
+    #glob.lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 1)
     
-    lcdLock.release()
+    glob.lcdLock.release()
