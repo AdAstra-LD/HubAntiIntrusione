@@ -16,6 +16,7 @@ import userinput.keypad as keypad
 import communication.comm as comm
 
 import led
+import buzzer
 import glob
 
 pinBuzzer = D15.PWM
@@ -38,7 +39,7 @@ def initIO():
     glob.ledRGB.RGBoff()
     
     print("Setting up buzzer...")
-    pinMode(pinBuzzer, OUTPUT)
+    glob.buzzer = buzzer.Buzzer(pinBuzzer)
     
     print("Setting up input pins...")
     pinMode(pinIR, INPUT)
@@ -55,31 +56,32 @@ def initIO():
     #thread(readAmbientLight)
 
 def toggleOnOff():
-    status = glob.alarmEnable
-    glob.alarmEnable = not status
-    glob.audioEnable = not status
-    glob.flashEnable = not status
+    status = glob.enable["alarm"][0]
+    glob.enable["alarm"][0] = not status
+    glob.enable["audio"][0] = not status
+    glob.enable["flash"][0] = not status
     
+    glob.lcdLock.release() #takes priority over every other process
     glob.lcdLock.acquire()
     glob.lcd.clear()
 
-    if (glob.alarmEnable):
+    if (glob.enable["alarm"][0]):
         glob.ledRGB.RGBset(0, 0, 1)
         print("Sistema abilitato")
         glob.lcd.printAtPos(glob.lcd.CGRAM[4], glob.lcd.nCols-1, 0) #EXCLAMATION
     else:
         glob.ledRGB.memorizeColor(0, 0, 0)
-        glob.ledRGB.RGBoff()
         stopAlarm()
+        glob.ledRGB.RGBoff()
         glob.lcd.printAtPos(' ', glob.lcd.nCols-1, 0)
         print("Sistema disabilitato")
         
     glob.lcdLock.release()
 
 def intrusione():
-    if (glob.alarmEnable):
+    if (glob.enable["alarm"][0]):
         glob.ledRGB.flash(flashFrequency = 20, color = 'R')
-        #thread(soundAlarm)
+        glob.buzzer.play()
         print("Intrusione!!!")
         glob.lcdLock.acquire()
         glob.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
@@ -93,36 +95,8 @@ def stopAlarm():
     glob.lcd.clear()
     glob.lcdLock.release()
     
-    glob.audioEnable = False
-    glob.flashEnable = False
-    
-    pwm.write(pinBuzzer, 0, 0)
-    glob.ledRGB.RGBset(R = 0)
-
-def soundAlarm(initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
-    if initialFreq == 0 or initialFreq < finalFreq or delay == 0 or increment == 0:
-        return
-        
-    glob.audioEnable = True
-    currentFreq = initialFreq
-    
-    while (glob.audioEnable):
-        #we are using MICROS so every sec is 1000000 of micros. 
-        #// is the int division, pwm.write period doesn't accept floats
-        period=1000000//currentFreq
-        
-        #set the period of the buzzer and the duty to 50% of the period
-        pwm.write(pinBuzzer, period, period//2, MICROS)
-        
-        # increment the frequency every loop
-        currentFreq = currentFreq + increment 
-        
-        # reset period
-        if abs(currentFreq - finalFreq) < abs(increment):
-            currentFreq = initialFreq
-            print("ping")
-        
-        sleep(delay)
+    glob.enable["audio"][0] = False
+    glob.enable["flash"][0] = False
         
 def initLCD(port = I2C0):
     lcdObj = lcdi2c.LCDI2C(port, nCols=16, nRows=2)

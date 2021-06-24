@@ -1,14 +1,16 @@
 import threading
 
-#Global Vars
-alarmEnable = False;
-audioEnable = True;
-flashEnable = True;
-
-#Global Vars for tasks
-enable_readAmbientLight = True
-enable_readTemperature = True
-enable_readHumidity = True
+enable = { 
+    #Global Vars for system 
+    "alarm" : [False],
+    "audio" : [True],
+    "flash" : [False],
+    
+    #Global Vars for tasks
+    "readAmbientLight" : [True],
+    "readTemperature" : [True],
+    "readHumidity" : [True]
+}
 
 #Lock objects for threading
 lcdLock = threading.Lock()
@@ -16,6 +18,7 @@ lcdLock = threading.Lock()
 #Peripherals
 lcd = None
 pad = None
+buzzer = None
 ledRGB = None
 
 #Utilities
@@ -33,13 +36,18 @@ def pinToggleMulti (*args):
     for pin in args:
         pinToggle(pin)
 
-def flashPins(flashFrequency, *args):
+def flashPins(flashFrequency, taskOnEnd = None, *args):
+    global enable 
+    global ledRGB
+    
     if (flashFrequency == 0):
         flashFrequency = 1
     
-    thread(timedRepeat, 1000//flashFrequency, flashEnable, pinToggleMulti, *args)
+    thread(timedRepeat, 1000//flashFrequency, enable["flash"], pinToggleMulti, taskOnEnd, *args)
 
-def timedRepeat(timePeriod, runCondition, task, *args):
-    while runCondition:
-        task(*args)
+def timedRepeat(timePeriod, runCondition, taskOnStart, taskOnEnd, *startArgs):
+    while runCondition[0]:
+        taskOnStart(*startArgs)
         sleep(timePeriod)
+    
+    taskOnEnd()
