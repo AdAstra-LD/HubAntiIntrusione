@@ -57,16 +57,17 @@ def initIO():
     #thread(readAmbientLight)
 
 def toggleOnOff():
-    status = glob.enable["alarm"][0]
-    glob.enable["alarm"][0] = not status
-    glob.enable["audio"][0] = not status
-    glob.enable["flash"][0] = not status
+    status = glob.enable["alarm"].get()
+    
+    glob.enable["alarm"].set(not status)
+    glob.enable["audio"].set(not status)
+    glob.enable["flash"].set(not status)
     
     glob.lcdLock.release() #takes priority over every other process
     glob.lcdLock.acquire()
     glob.lcd.clear()
 
-    if (glob.enable["alarm"][0]):
+    if (glob.enable["alarm"].get() == True):
         glob.ledRGB.RGBset(0, 0, 1)
         print("Sistema abilitato")
         glob.lcd.printAtPos(glob.lcd.CGRAM[4], glob.lcd.nCols-1, 0) #EXCLAMATION
@@ -80,9 +81,9 @@ def toggleOnOff():
     glob.lcdLock.release()
 
 def intrusione():
-    if (glob.enable["alarm"][0]):
+    if (glob.enable["alarm"].get() == True):
         glob.ledRGB.flash(flashFrequency = 20, color = 'R')
-        glob.buzzer.play()
+        #glob.buzzer.play()
         print("Intrusione!!!")
         glob.lcdLock.acquire()
         glob.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
@@ -96,8 +97,8 @@ def stopAlarm():
     glob.lcd.clear()
     glob.lcdLock.release()
     
-    glob.enable["audio"][0] = False
-    glob.enable["flash"][0] = False
+    glob.enable["audio"].set(False)
+    glob.enable["flash"].set(False)
         
 def initLCD(port = I2C0):
     lcdObj = lcdi2c.LCDI2C(port, nCols=16, nRows=2)

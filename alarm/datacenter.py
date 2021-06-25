@@ -1,9 +1,10 @@
 import adc 
+import mutableObject as mo
 
 sensorStorage = { 
-    "light" : 0,
-    "temperature" : 0.0,
-    "humidity" : 0.0
+    "light" : mo.Mutable(0),
+    "temperature" : mo.Mutable(0.0),
+    "humidity" : mo.Mutable(0.0)
 }
 
 def readTemperature(i2c, temperDigits = 2):
@@ -30,6 +31,5 @@ def dummy():
     global sensorStorage
     
     val = random(0, 100)
-    sensorStorage["light"] = val
-    print(sensorStorage["light"])
-    return val
+    sensorStorage["light"].set(val)
+    return sensorStorage["light"].get()

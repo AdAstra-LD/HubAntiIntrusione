@@ -58,9 +58,10 @@ class RGBLed:
         self.RGBset(colorTuple = self.mem)
     
     def flash(self, flashFrequency = 20, color = 'R'):
-        glob.enable["flash"][0] = True
+        glob.enable["flash"].set(True)
         self.memorizeCurrentColor()
         self.RGBoff()
         
         pin = self.ledColorToPin(color)
-        glob.flashPins(flashFrequency, pin, self.restoreColor)
+
+        glob.flashPins(flashFrequency, pin, (self.restoreColor,))

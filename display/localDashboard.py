@@ -7,9 +7,9 @@ def showDashboard(lcd):
     lcd.clear()
     glob.lcdLock.release()
     
-    thread(glob.timedRepeat, 3000, glob.enable["readLight"], 
-        (datacenter.dummy, showLight), 
-        ((), (lcd, datacenter.sensorStorage["light"]),))
+    #thread(glob.timedRepeat, 1000, glob.enable["readLight"], 
+    #    (datacenter.dummy, showLight), 
+    #    ([], [lcd, datacenter.sensorStorage["light"]],))
         
     #thread(glob.timedRepeat, 15000, glob.enable["readLight"], datacenter.readAmbientLight, (glob.photoresistor, True))
     #thread(glob.timedRepeat, 15000, glob.enable["readTemperature"], datacenter.readTemperature, (I2C???, 2))
@@ -21,7 +21,7 @@ def showTemperature(lcd, temperature, CGRAMcharPos = 0, celsiusSymbolPos = 3):
     lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 0) #Temperature Symbol 
     
     #print value
-    tempString = str(temperature)
+    tempString = str(temperature.get())
     
     global temperDigits
     temperDigits = len(tempString)
@@ -36,7 +36,7 @@ def showHumidity(lcd, humidity, CGRAMcharPos = 1):
     lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 3 + temperDigits, 0)
     
     #print value
-    humidString = str(humidity)
+    humidString = str(humidity.get())
     global humidDigits
     humidDigits = len(humidString)
     
@@ -49,7 +49,7 @@ def showLight(lcd, light, CGRAMcharPos = 2):
     lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 1)
     
     #print value
-    lightString = str(light)    
+    lightString = str(light.get())   
     lcd.print(lightString + "%") #ex. 46%
     glob.lcdLock.release()
 

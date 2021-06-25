@@ -28,9 +28,9 @@ class Buzzer:
         if initialFreq == 0 or initialFreq < finalFreq or delay == 0 or increment == 0:
             return
         
-        glob.enable["audio"][0] = True
+        glob.enable["audio"].set(True)
         
         self.currentFreq = initialFreq
         thread(glob.timedRepeat, delay, glob.enable["audio"], 
-            (self.loopSound,), ((initialFreq, finalFreq, increment, delay),), #funzioni di start
-            (pwm.write,), ((self.pin, 0, 0),)) #funzioni finali
+            (self.loopSound,), ([initialFreq, finalFreq, increment, delay],), #funzioni di start
+            (pwm.write,), ([self.pin, 0, 0],)) #funzioni finali
