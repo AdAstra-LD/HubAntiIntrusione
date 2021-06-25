@@ -31,7 +31,7 @@ def isNumber(s):
     except ValueError:
         return False
 
-def stringRpad(string, desiredLength, filler = ""):
+def stringRpad(string, desiredLength, filler = " "):
     strlen = len(string)
     
     if strlen < desiredLength:
