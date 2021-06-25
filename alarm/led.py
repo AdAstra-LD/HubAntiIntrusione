@@ -63,4 +63,4 @@ class RGBLed:
         self.RGBoff()
         
         pin = self.ledColorToPin(color)
-        glob.flashPins(flashFrequency, self.restoreColor, pin)
+        glob.flashPins(flashFrequency, pin, self.restoreColor)

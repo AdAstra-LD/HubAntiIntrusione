@@ -51,6 +51,7 @@ def initIO():
     sleep(750)
     print("Setup completed")
     settings.load()
+    ui.showDashboard(glob.lcd)
     
     #comm.AlarmComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
     #thread(readAmbientLight)

@@ -8,7 +8,7 @@ class Buzzer:
         self.pin = pin
         self.currentFreq = 0
 
-    def loopSound(self, initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
+    def loopSound(self, initialFreq, finalFreq, increment, delay):
         #we are using MICROS so every sec is 1000000 of micros. 
         #// is the int division, pwm.write period doesn't accept floats
         period=1000000//self.currentFreq
@@ -24,9 +24,6 @@ class Buzzer:
             self.currentFreq = initialFreq
             print("ping")
                 
-    def stopSound(self):
-        pwm.write(self.pin, 0, 0)
-                
     def play(self, initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
         if initialFreq == 0 or initialFreq < finalFreq or delay == 0 or increment == 0:
             return
@@ -34,4 +31,6 @@ class Buzzer:
         glob.enable["audio"][0] = True
         
         self.currentFreq = initialFreq
-        thread(glob.timedRepeat, delay, glob.enable["audio"], self.loopSound, self.stopSound, initialFreq, finalFreq, increment, delay)
+        thread(glob.timedRepeat, delay, glob.enable["audio"], 
+            (self.loopSound,), ((initialFreq, finalFreq, increment, delay),), #funzioni di start
+            (pwm.write,), ((self.pin, 0, 0),)) #funzioni finali
