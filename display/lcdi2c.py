@@ -1,5 +1,6 @@
 import i2c
 import streams
+import threading
 
 # I2C byte:   [H ------------------------ L]
 #             [  bit dati  ] [bit controllo]
@@ -80,6 +81,7 @@ class LCDI2C():
         self.lastData = 0x00
         self.cursorPos = [0, 0]
         self.i2cport = commPort
+        self.lock = threading.Lock()
         
         if (self.i2cport == None):
             return

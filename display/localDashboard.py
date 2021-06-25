@@ -3,9 +3,9 @@ import alarm.datacenter as datacenter
 import glob
 
 def showDashboard(lcd):
-    glob.lcdLock.acquire()
+    glob.lcd.lock.acquire()
     lcd.clear()
-    glob.lcdLock.release()
+    glob.lcd.lock.release()
     
     #thread(glob.timedRepeat, 1000, glob.enable["readLight"], 
     #    (datacenter.dummy, showLight), 
@@ -16,7 +16,7 @@ def showDashboard(lcd):
     #thread(glob.timedRepeat, 15000, glob.enable["readHumidity"], datacenter.readHumidity, (I2C???, 2))
 
 def showTemperature(lcd, temperature, CGRAMcharPos = 0, celsiusSymbolPos = 3):
-    glob.lcdLock.acquire()
+    glob.lcd.lock.acquire()
     
     lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 0) #Temperature Symbol 
     
@@ -28,10 +28,10 @@ def showTemperature(lcd, temperature, CGRAMcharPos = 0, celsiusSymbolPos = 3):
     
     lcd.print(tempString) #ex.: 35 °C
     lcd.print(lcd.CGRAM[celsiusSymbolPos])
-    glob.lcdLock.release()
+    glob.lcd.lock.release()
     
 def showHumidity(lcd, humidity, CGRAMcharPos = 1):
-    glob.lcdLock.acquire()
+    glob.lcd.lock.acquire()
     
     lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 3 + temperDigits, 0)
     
@@ -41,21 +41,21 @@ def showHumidity(lcd, humidity, CGRAMcharPos = 1):
     humidDigits = len(humidString)
     
     lcd.print(humidString + "%") #ex. 46%
-    glob.lcdLock.release()
+    glob.lcd.lock.release()
     
 def showLight(lcd, light, CGRAMcharPos = 2):
-    glob.lcdLock.acquire()
+    glob.lcd.lock.acquire()
     
     lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 1)
     
     #print value
     lightString = str(light.get())   
     lcd.print(lightString + "%") #ex. 46%
-    glob.lcdLock.release()
+    glob.lcd.lock.release()
 
 def showStatus(lcd, wifiStatus, lockedStatus):
-    glob.lcdLock.acquire()
+    glob.lcd.lock.acquire()
     
     #lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 1)
     
-    glob.lcdLock.release()
+    glob.lcd.lock.release()

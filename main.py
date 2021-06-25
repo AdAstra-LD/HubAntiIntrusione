@@ -48,6 +48,7 @@ def initIO():
     pinMode(pinEnButton, INPUT_PULLUP)
     
     glob.lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
+    glob.ledRGB.threadedBlink(R = 1, G = 1)
     sleep(750)
     print("Setup completed")
     settings.load()
@@ -63,8 +64,8 @@ def toggleOnOff():
     glob.enable["audio"].set(not status)
     glob.enable["flash"].set(not status)
     
-    glob.lcdLock.release() #takes priority over every other process
-    glob.lcdLock.acquire()
+    glob.lcd.lock.release() #takes priority over every other process
+    glob.lcd.lock.acquire()
     glob.lcd.clear()
 
     if (glob.enable["alarm"].get() == True):
@@ -78,24 +79,24 @@ def toggleOnOff():
         glob.lcd.printAtPos(' ', glob.lcd.nCols-1, 0)
         print("Sistema disabilitato")
         
-    glob.lcdLock.release()
+    glob.lcd.lock.release()
 
 def intrusione():
     if (glob.enable["alarm"].get() == True):
         glob.ledRGB.flash(flashFrequency = 20, color = 'R')
         glob.buzzer.play()
         print("Intrusione!!!")
-        glob.lcdLock.acquire()
+        glob.lcd.lock.acquire()
         glob.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
     else:
         print("Movimento rilevato... ma l'allarme non e' inserito")
-        glob.lcdLock.acquire()
+        glob.lcd.lock.acquire()
         glob.lcd.printLine("Alarm busy...", 1, align = "CENTER")
 
 def stopAlarm():
     print("Alarm signal down...")
     glob.lcd.clear()
-    glob.lcdLock.release()
+    glob.lcd.lock.release()
     
     glob.enable["audio"].set(False)
     glob.enable["flash"].set(False)

@@ -13,9 +13,6 @@ enable = {
     "readHumidity" : mo.Mutable(True)
 }
 
-#Lock objects for threading
-lcdLock = threading.Lock()
-
 #Peripherals
 lcd = None
 pad = None
@@ -37,11 +34,11 @@ def isNumber(s):
 def pinToggle_wrapper(pin):
     pinToggle(pin)
 
-def flashPins(flashFrequency, pin, taskSequenceOnEnd = [], endArgs = [[]]):
+def flashPins(flashFrequency, condition, pin, taskSequenceOnEnd = [], endArgs = [[]]):
     if (flashFrequency == 0):
         flashFrequency = 1
     
-    thread(timedRepeat, 1000//flashFrequency, enable["flash"], 
+    thread(timedRepeat, 1000//flashFrequency, condition, 
         [pinToggle_wrapper], [[pin]], 
         taskSequenceOnEnd, endArgs)
 
