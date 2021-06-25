@@ -41,8 +41,16 @@ def userSetup():
     glob.lcd.printLine("Please choose a\npassword for the\nalarm system.")
     sleep(1500)
     
-    passwordScreen()
+    pw = passwordScreen()
+    flashMem[memmap.SETUP_INFO_OFFSET] = SYSTEM_PROTECTED
+    flashMem[memmap.PASSWORD_LENGTH_OFFSET] = len(pw)
+    
+    for x in range(len(pw)):
+        flashMem[memmap.USER_PASSWORD_OFFSET+x] = int(pw[x])
 
+    flashMem.flush()
+    print("PW written to RAM...")
+    
 def passwordScreen():
     password = []                       #inizializza lista vuota per contenere la password
     selectionConfirmed = False          #variabile che consente di uscire dalla schermata di selezione
@@ -60,17 +68,18 @@ def passwordScreen():
         while(val != 'D'):
             val = glob.pad.scan()
             posInPassword = glob.lcd.cursorPos[0] - inputStartPos
+            curlen = len(password)
             
             if glob.isNumber(val):
-                if len(password) < PASSWORD_MAXLEN:
-                    print("pos in password: " + str(posInPassword) + "  pw len: " + str(len(password)))
-                    if posInPassword > len(password)-1:
-                        password.append(val)
-                    else:
-                        password[posInPassword] = val
-                        
+                print("pos in password: " + str(posInPassword) + "  pw len: " + str(len(password)))
+                if posInPassword < curlen: #Se posizione del cursore non è sull'ultimo char
+                    password[posInPassword] = val #sostituzione
                     glob.lcd.print(val)
-                print("La password attuale e': " + str(password))
+                elif curlen < PASSWORD_MAXLEN: #Altrimenti assicurati di poter aggiungere
+                    password.append(val)
+                    glob.lcd.print(val)
+                else:
+                    glob.ledRGB.quickBlink(R=1)
             elif val == 'B':
                 if posInPassword > 0:
                     glob.lcd.shift(-1)
@@ -116,17 +125,11 @@ def passwordScreen():
             if (val == '1'):
                 glob.lcd.printLine("Pword confirmed.")
                     
-                flashMem[memmap.SETUP_INFO_OFFSET] = SYSTEM_PROTECTED
-                flashMem[memmap.PASSWORD_LENGTH_OFFSET] = len(password)
-                
-                for x in range(len(password)):
-                    flashMem[memmap.USER_PASSWORD_OFFSET+x] = int(password[x])
-                
-                print("PW written to RAM...")
                 selectionConfirmed = True
+                return password
             else:
                 print("Retrying...")
                 password = []
     #}
     print("Setup completed")
-    flashMem.flush()
+    
