@@ -29,7 +29,7 @@ class RGBLed:
         global colorPinDict
         ledColorlow = ledColor.lower()
         
-        return colorPinDict[ledColor]
+        return self.pinTuple[colorPinDict[ledColorlow]]
 
     def RGBoff(self):
         digitalWrite(self.pinTuple[0], LOW)
@@ -82,11 +82,12 @@ class RGBLed:
         
         flashFrequency = 20 #Hz
         period = 1000//flashFrequency
+        
         for x in range(times):
             self.RGBset(R, G, B, colorTuple)
-            sleep(time)
+            sleep(period)
             self.RGBoff()
-            sleep(time)
+            sleep(period)
         
         self.restoreColor()
         
