@@ -31,6 +31,14 @@ def isNumber(s):
     except ValueError:
         return False
 
+def stringRpad(string, desiredLength, filler = ""):
+    strlen = len(string)
+    
+    if strlen < desiredLength:
+        string = string + (filler * (desiredLength-strlen))
+
+    return string
+
 def pinToggle_wrapper(pin):
     pinToggle(pin)
 

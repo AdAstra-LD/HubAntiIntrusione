@@ -7,7 +7,7 @@ def showDashboard(lcd):
     lcd.clear()
     glob.lcd.lock.release()
     
-    thread(glob.timedRepeat, 1000, glob.enable["readLight"], 
+    thread(glob.timedRepeat, 700, glob.enable["readLight"], 
         (datacenter.dummy, showLight), 
         ([], [lcd, datacenter.sensorStorage["light"]],))
         
@@ -49,8 +49,10 @@ def showLight(lcd, light, CGRAMcharPos = 2):
     lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 1)
     
     #print value
-    lightString = str(light.get())   
-    lcd.print(lightString + "%") #ex. 46%
+    shortString = str(light.get()) + "%"
+    expandedString = glob.stringRpad(shortString, 4)
+
+    lcd.print(expandedString) #ex. 46%
     glob.lcd.lock.release()
 
 def showStatus(lcd, wifiStatus, lockedStatus):
