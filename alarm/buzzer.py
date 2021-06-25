@@ -32,5 +32,5 @@ class Buzzer:
         
         self.currentFreq = initialFreq
         thread(glob.timedRepeat, delay, glob.enable["audio"], 
-            (self.loopSound,), ([initialFreq, finalFreq, increment, delay],), #funzioni di start
-            (pwm.write,), ([self.pin, 0, 0],)) #funzioni finali
+            [self.loopSound], [[initialFreq, finalFreq, increment, delay]], #funzioni di start
+            [pwm.write], [[self.pin, 0, 0]]) #funzioni finali

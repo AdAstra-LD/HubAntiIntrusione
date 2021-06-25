@@ -83,7 +83,7 @@ def toggleOnOff():
 def intrusione():
     if (glob.enable["alarm"].get() == True):
         glob.ledRGB.flash(flashFrequency = 20, color = 'R')
-        #glob.buzzer.play()
+        glob.buzzer.play()
         print("Intrusione!!!")
         glob.lcdLock.acquire()
         glob.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
