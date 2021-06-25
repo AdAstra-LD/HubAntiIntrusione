@@ -7,9 +7,9 @@ def showDashboard(lcd):
     lcd.clear()
     glob.lcd.lock.release()
     
-    #thread(glob.timedRepeat, 1000, glob.enable["readLight"], 
-    #    (datacenter.dummy, showLight), 
-    #    ([], [lcd, datacenter.sensorStorage["light"]],))
+    thread(glob.timedRepeat, 1000, glob.enable["readLight"], 
+        (datacenter.dummy, showLight), 
+        ([], [lcd, datacenter.sensorStorage["light"]],))
         
     #thread(glob.timedRepeat, 15000, glob.enable["readLight"], datacenter.readAmbientLight, (glob.photoresistor, True))
     #thread(glob.timedRepeat, 15000, glob.enable["readTemperature"], datacenter.readTemperature, (I2C???, 2))
