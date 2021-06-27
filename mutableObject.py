@@ -7,3 +7,6 @@ class Mutable:
         
     def set(self, newVal):
         self.val[0] = newVal
+        
+    def __str__(self):
+        return str(self.val[0])

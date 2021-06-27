@@ -64,9 +64,7 @@ def toggleOnOff():
     glob.enable["audio"].set(not status)
     glob.enable["flash"].set(not status)
     
-    glob.lcd.lock.release() #takes priority over every other process
     glob.lcd.lock.acquire()
-    glob.lcd.clear()
 
     if (glob.enable["alarm"].get() == True):
         glob.ledRGB.RGBset(0, 0, 1)

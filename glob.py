@@ -39,6 +39,21 @@ def stringRpad(string, desiredLength, filler = " "):
 
     return string
 
+def stringCapitalize(string):
+    newStr = [c for c in string]
+        
+    newStr[0] = newStr[0].upper()
+    return ''.join(newStr)
+
+def ceil(n):
+    return -int((-n) // 1)
+
+def max(n1, n2):
+    if (n1 > n2):
+        return n1
+        
+    return n2
+
 def pinToggle_wrapper(pin):
     pinToggle(pin)
 
@@ -49,7 +64,6 @@ def flashPins(flashFrequency, condition, pin, taskSequenceOnEnd = [], endArgs = 
     thread(timedRepeat, 1000//flashFrequency, condition, 
         [pinToggle_wrapper], [[pin]], 
         taskSequenceOnEnd, endArgs)
-
 
 
     #timePeriod: tempo che passa tra una chiamata di tutti i task iniziali e l'altra

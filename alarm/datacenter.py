@@ -1,10 +1,14 @@
 import adc 
 import mutableObject as mo
 
+temperatureKey = 'temperature'
+humidityKey = 'humidity'
+lightKey = 'light'
+
 sensorStorage = { 
-    "light" : mo.Mutable(0),
-    "temperature" : mo.Mutable(0.0),
-    "humidity" : mo.Mutable(0.0)
+    temperatureKey : mo.Mutable(0.0),
+    humidityKey : mo.Mutable(0.0),
+    lightKey : mo.Mutable(0)
 }
 
 def readTemperature(i2c, temperDigits = 2):
@@ -27,9 +31,10 @@ def readLight(pinSensor, invert = False, keyName = "light"):
     sensorStorage[keyName] = percentage
     return percentage
     
-def dummy():
+def dummy(keyName, lowerLimit, upperLimit):
     global sensorStorage
     
-    val = random(0, 100)
-    sensorStorage["light"].set(val)
-    return sensorStorage["light"].get()
+    val = random(lowerLimit, upperLimit*17)
+    val = val/17
+    sensorStorage[keyName].set(val)
+    return sensorStorage[keyName].get()

@@ -23,7 +23,7 @@ import timers
 lastChangeTime = 0
 keyPressed = 0
 
-PINSETUP_DEFAULT = (A0, A1, D25, D26, D27, D14, D12, D13)
+PINSETUP_DEFAULT = (A2, A3, A0, A1, D27, D14, D12, D13)
 
 NUM_ROWS = 4
 NO_BUTTON_PRESSED = -1
