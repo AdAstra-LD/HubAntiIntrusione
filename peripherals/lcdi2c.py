@@ -86,7 +86,7 @@ class LCDI2C():
         self.i2cport = commPort
         self.lock = threading.Lock()
         
-        if (self.i2cport == None):
+        if self.i2cport is None:
             return
         
         ### CRITICO - ISTANZA DI I2C ###
@@ -94,7 +94,7 @@ class LCDI2C():
         
     def prepare(self):
         #Inizializzazione
-        if (self.i2cport == None):
+        if self.i2cport is None:
             return
         
         self.communicPort.start()
@@ -165,7 +165,7 @@ class LCDI2C():
         #"""
         #Clear the display and reset the cursor position
         #"""
-        if (self.i2cport == None):
+        if self.i2cport is None:
             return
         
         self.sendByte(CMD_CLR, RSmode_CMD)
@@ -239,7 +239,7 @@ class LCDI2C():
         if self.cursorPos[0] + shamt > self.nCols -1 or self.cursorPos[0] + shamt < 0:
             return
         else:
-            if (delay > 0):
+            if delay > 0:
                 if shamt >= 0:
                     amt = 1
                 else:
@@ -256,19 +256,18 @@ class LCDI2C():
     def moveCursor(self, column, row):
         #Move the cursor to a new posotion
         #indices are always zero-based
-
-        self.cursorPos = [column, row]
         
         #x -> col
-        addr = self.cursorPos[0] & 0x3f     # Limit col index to a maximum of 63
+        addr = column & 0x3f     # Limit col index to a maximum of 63
         
         #y -> row
-        if (self.cursorPos[1] & 0b00000001): # Lines 1 & 3 (x1, i.e.: 01 and 11)
+        if row & 0b00000001: # Lines 1 & 3 (x1, i.e.: 01 and 11)
             addr += 0x40    
-        if (self.cursorPos[1] & 0b00000010): # Lines 2 & 3 (1x, i.e.: 10 and 11)
+        if row & 0b00000010: # Lines 2 & 3 (1x, i.e.: 10 and 11)
             addr += 0x14
         
         self.sendByte(CMD_DDRAM | addr, RSmode_CMD)
+        self.cursorPos = [column, row]
         
 #----------------------------------------------------------#
 # FUNZIONI SCRITTURA --------------------------------------#
@@ -287,17 +286,31 @@ class LCDI2C():
             
         self.moveCursor(self.cursorPos[0], self.cursorPos[1]) #Re-stating the cursor position is necessary
         
-    def print(self, text, delay = 0):
-        #Stampa una stringa alla posizione corrente
-        #text:              bytes or str object, str object will be encoded with ASCII
-        #delay:             aggiunge delay tra un char e l'altro
+    def print(self, text, row = None, align = None, delay = 0):
+        #Stampa una stringa su LCD
+        #row:               riga di schermo su cui stampare. La posizione orizzontale resta invariata. se None, usa la riga corrente
+        #align:             allineamento del testo ad un riferimento, senza cambiare riga. se None, l'allineamento non viene utilizzato.
+        #text:              bytes o stringa da stampare
+        #delay:             delay tra la stampa di un char e l'altra
         
-        if (self.i2cport == None):
+        if self.i2cport is None:
             return
         
         byteArrayString = bytearray(text[:self.nCols])
+        strLen = len(byteArrayString)
         
-        if (delay == 0):
+        if row is not None:
+            self.moveCursor(self.cursorPos[0], row)
+        
+        #### DO NOT CHANGE ORDER OF ADDITION ####
+        if align == 'LEFT' or align == 'L':
+            self.moveCursor(0, self.cursorPos[1])
+        elif align == 'RIGHT' or align == 'R':
+            self.moveCursor(self.nCols-strLen, self.cursorPos[1])
+        elif align == 'CENTER' or align == 'CENTRE' or align == 'C':
+            self.moveCursor((self.nCols-strLen)//2, self.cursorPos[1])
+        
+        if delay == 0:
             for b in byteArrayString:
                 self.sendByte(b, RSmode_DATA)
         else:
@@ -305,18 +318,19 @@ class LCDI2C():
                 self.sendByte(b, RSmode_DATA)
                 sleep(delay)
         
-        strLen = len(byteArrayString)
+        
         self.lastPrinted = byteArrayString
         
         self.cursorPos[0] += strLen%self.nCols
         self.cursorPos[1] += strLen//self.nCols
+        
             
     def printAtPos(self, text, colID, rowID, delay = 0):
         #Stampa text ad una specifica posizione sul display e mantiene
         #quella posizione in memoria come corrente, per scritture future
         
         self.moveCursor(colID, rowID)
-        self.print(text, delay)
+        self.print(text, delay = delay)
     
     def printLine(self, text, row = 0, align='LEFT', delay = 0, sentenceDelay = 1500, clearPrevious = True):
         #Stampa text come frase intera sull'LCD, andando a capo automaticamente.
@@ -324,7 +338,7 @@ class LCDI2C():
         #text:      bytes or str object, str object will be encoded with ASCII
         #row:       row number is zero-based
         #align:     could be 'LEFT' | 'L' (default), 'RIGHT' | 'R' or 'CENTER' | 'CENTRE' | 'C'
-        if (self.i2cport == None):
+        if self.i2cport is None:
             return
         
         rowsToPrint = glob.splitSentence(text, self.nCols)
@@ -334,8 +348,8 @@ class LCDI2C():
         whitespaceCount = 0
         for r in range (numRowsToPrint):
             #sleep(500)
-            if (r % self.nRows == 0):
-                if (r != 0 and numRowsToPrint >= self.nRows):
+            if r % self.nRows == 0:
+                if r != 0 and numRowsToPrint >= self.nRows:
                     #__builtins__.print("Sleeping sentenceDelay")
                     sleep(sentenceDelay)
                     
@@ -369,7 +383,7 @@ class LCDI2C():
         else:
             #__builtins__.print(currentLine)
             cursorX = (len(currentLine.strip()) + whitespaceCount//2) % self.nCols
-            
+        
         
         cursorY = (numRowsToPrint-1) % self.nRows
         self.moveCursor(cursorX, cursorY)

@@ -6,54 +6,58 @@ import glob
 class ControlCenter():
     def __init__(self, lcd, ledRGB, buzzer, enableButton, IRsensor):
         self.enable = { 
-            #Global Vars for system 
-            "general" : mo.Mutable(False),
-            "audio" : mo.Mutable(False),
-            "flash" : mo.Mutable(False),
+            #Global Vars for the alarm
+            "dashboard" : mo.Mutable(True),
+            "alarm" : mo.Mutable(False),
+            "audio" : mo.Mutable(True),
+            "flash" : mo.Mutable(True)
         }
-
-        self.runDashboard = threading.Event()
-        self.runDashboard.set()
+        
+        self.running = { 
+            #Global Vars for system processes
+            "alarm" : mo.Mutable(False),
+            "wifi" : mo.Mutable(False),
+            "mqtt" : mo.Mutable(False)
+        }
+        
+        self.dashboard = None
         
         self.lcd = lcd
         self.ledRGB = ledRGB
         self.buzzer = buzzer
         
         #PINS MUST BE ALREADY INITIALIZED, BEFORE THESE INTERRUPTS ARE SET UP
-        onPinFall(enableButton, self.toggleOnOff)
+        onPinFall(enableButton, self.toggleOnOff, debounce=100)
         onPinRise(IRsensor, self.intrusione)
-        onPinFall(IRsensor, self.stopAlarm)
+        onPinFall(IRsensor, self.stopAlarm, debounce=700)
+    
+    def linkDashboard(self, dashboard):
+        self.dashboard = dashboard
 
     def toggleOnOff(self):
-        status = self.enable["general"].get()
+        isAlarmOn = self.enable["alarm"].get()
         
-        self.enable["general"].set(not status)
-        self.enable["audio"].set(not status)
-        self.enable["flash"].set(not status)
-        
-        if (self.enable["general"].get() == True):
+        if isAlarmOn: #se è inizialmente attivo
+            self.ledRGB.memorizeColor(0, 0, 0)
+            self.ledRGB.RGBoff()
+            self.stopAlarm()
+            print("Sistema disabilitato") #viene disattivato
+        else:
             self.ledRGB.RGBset(0, 0, 1)
             print("Sistema abilitato")
-            self.lcd.lock.acquire()
-            self.lcd.printAtPos(self.lcd.CGRAM[4], self.lcd.nCols-1, 0) #EXCLAMATION
-        else:
-            self.ledRGB.memorizeColor(0, 0, 0)
-            self.stopAlarm()
-            self.ledRGB.RGBoff()
-            
-            self.lcd.lock.acquire()
-            self.lcd.printAtPos(' ', self.lcd.nCols-1, 0)
-            print("Sistema disabilitato")
         
-        self.lcd.lock.release()
+        self.enable["alarm"].set(not isAlarmOn)
+        
+        self.dashboard.displayStatus()
             
         
     def intrusione(self):
-        if (self.enable["general"].get() == True):
-            self.runDashboard.clear()
-            self.ledRGB.flash(self.enable["flash"], flashFrequency = 20, color = 'R')
-            self.buzzer.play(self.enable["audio"])
+        self.dashboard.enable.clear()
+        if (self.enable["alarm"].get() == True):
+            self.running["alarm"].set(True)
             print("Intrusione!!!")
+            self.ledRGB.flash(self.enable["flash"], flashFrequency = 20, colorTuple = (1, 0, 0))
+            #self.buzzer.play(self.enable["audio"])
             self.lcd.lock.acquire()
             self.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
         else:
@@ -65,8 +69,13 @@ class ControlCenter():
         print("lock released")
     
     def stopAlarm(self):
-        self.enable["audio"].set(False)
-        self.enable["flash"].set(False)
+        if self.running["alarm"].get():
+            self.buzzer.continueFlag.clear()
+            self.ledRGB.continueFlag.clear()
+            self.lcd.lock.acquire()
+            self.lcd.clear()
+            self.lcd.lock.release()
+            print("Alarm signal down...")
         
-        print("Alarm signal down...")
-        self.runDashboard.set()
+        self.dashboard.enable.set()
+        self.dashboard.displayStatus()

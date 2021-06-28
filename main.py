@@ -41,7 +41,6 @@ def initIO():
     
     #pinMode(pinSettingsButton, INPUT_PULLDOWN)
     pinMode(pinEnButton, INPUT_PULLUP)
-    #comm.AlarmComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
     print("Setup completed")
         
 def initLCD(port = I2C0):
@@ -68,13 +67,17 @@ initIO()
 glob.lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
 
 ledRGB = led.RGBLed(D4, D22, D23)
-ledRGB.threadedBlink(R = 1, G = 1)
+ledRGB.quickBlink(R = 1, G = 1)
 
 sleep(750)
 settings.load()
 
 alarmDataCenter = dc.DataCenter(1, 1, 0)
-controlCenter = cc.ControlCenter(glob.lcd, ledRGB, buzzer.Buzzer(D15.PWM), pinEnButton, pinIR)
-localDashboard = ui.LocalDashboard(alarmDataCenter, glob.lcd, controlCenter.runDashboard)
+alarmControlCenter = cc.ControlCenter(glob.lcd, ledRGB, buzzer.Buzzer(D15.PWM), pinEnButton, pinIR)
+
+localDashboard = ui.LocalDashboard(alarmDataCenter, alarmControlCenter, glob.lcd)
+alarmControlCenter.linkDashboard(localDashboard)
 
 localDashboard.show()
+
+#comm.AlarmComm(alarmControlCenter, "FASTWEB-RML2.4", "marcheselaiso@2020 2.4")

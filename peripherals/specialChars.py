@@ -25,6 +25,7 @@ FAHRENHEIT =        (0b11100, 0b10100, 0b11100, nul, 0b00111, 0b00110, 0b00100, 
 #Connectivity
 WIFI =              (nul, 0b01110, 0b10001, 0b00100, 0b01010, nul, 0b00100, nul)
 NO_SIGNAL =         (0b01010, 0b00100, 0b01010, nul, 0b00001, 0b00001, 0b00101, 0b10101)
+MQTT =              (nul, 0b00001, 0b11100, 0b00010, 0b11001, 0b00101, 0b10101, nul)
 
 #Security
 UNLOCKED =          (0b01110, 0b00001, 0b00001, all, all, 0b11011, 0b11011, all)

@@ -30,6 +30,14 @@ def stringRpad(string, desiredLength, filler = " "):
 
     return string
 
+def stringLpad(string, desiredLength, filler = " "):
+    strlen = len(string)
+    
+    if strlen < desiredLength:
+        string = (filler * (desiredLength-strlen)) + string
+
+    return string
+
 def stringCapitalize(string):
     newStr = [c for c in string]
         
@@ -69,17 +77,6 @@ def max(n1, n2):
         
     return n2
 
-def pinToggle_wrapper(pin):
-    pinToggle(pin)
-
-def flashPins(flashFrequency, condition, pin, taskSequenceOnEnd = [], endArgs = [[]]):
-    if (flashFrequency == 0):
-        flashFrequency = 1
-    
-    thread(timedRepeat, 1000//flashFrequency, condition, 
-        [pinToggle_wrapper], [[pin]], 
-        taskSequenceOnEnd, endArgs)
-
 
     #timePeriod: tempo che passa tra una chiamata di tutti i task iniziali e l'altra
     #runCondition: condizione che consente di iterare ed eseguire i task iniziali
@@ -98,13 +95,14 @@ def flashPins(flashFrequency, condition, pin, taskSequenceOnEnd = [], endArgs = 
     #sottrai(10, 8)
 
     #non appena "continuaAdOperare" è False, viene eseguita stampaRisultato()
-def timedRepeat(timePeriod, runCondition, taskSequenceOnStart, startArgs = [[]], taskSequenceOnEnd = [], endArgs = [[]], eventWait = None):
-    if (eventWait is not None):
-        eventWait.wait()
+def timedRepeat(timePeriod, runCondition, eventWait, taskSequenceOnStart, startArgs = [[]], taskSequenceOnEnd = [], endArgs = [[]]):
     
     numStartTasks = len(taskSequenceOnStart)
+    
+    print("About to start a new process of " + str(numStartTasks) + " tasks...")
     while runCondition.get() == True:
         for x in range(numStartTasks):
+            eventWait.wait()
             taskSequenceOnStart[x](*startArgs[x])
             
         sleep(timePeriod)
