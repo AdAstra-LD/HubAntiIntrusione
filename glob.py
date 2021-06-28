@@ -1,23 +1,14 @@
 import threading
 import mutableObject as mo
 
-enable = { 
-    #Global Vars for system 
-    "alarm" : mo.Mutable(False),
-    "audio" : mo.Mutable(True),
-    "flash" : mo.Mutable(False),
-    
-    #Global Vars for tasks
-    "readLight" : mo.Mutable(True),
-    "readTemperature" : mo.Mutable(True),
-    "readHumidity" : mo.Mutable(True)
-}
+#Alarm Keywords
+temperatureKey = 'temperature'
+humidityKey = 'humidity'
+lightKey = 'light'
 
 #Peripherals
 lcd = None
 pad = None
-buzzer = None
-ledRGB = None
 photoresistor = None
 
 #Utilities
@@ -107,7 +98,9 @@ def flashPins(flashFrequency, condition, pin, taskSequenceOnEnd = [], endArgs = 
     #sottrai(10, 8)
 
     #non appena "continuaAdOperare" è False, viene eseguita stampaRisultato()
-def timedRepeat(timePeriod, runCondition, taskSequenceOnStart, startArgs = [[]], taskSequenceOnEnd = [], endArgs = [[]]):
+def timedRepeat(timePeriod, runCondition, taskSequenceOnStart, startArgs = [[]], taskSequenceOnEnd = [], endArgs = [[]], eventWait = None):
+    if (eventWait is not None):
+        eventWait.wait()
     
     numStartTasks = len(taskSequenceOnStart)
     while runCondition.get() == True:

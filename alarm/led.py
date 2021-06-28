@@ -25,6 +25,8 @@ class RGBLed:
         self.mem = [0, 0, 0]
         self.pinTuple = (Rpin, Gpin, Bpin)
         
+        self.RGBoff()
+        
     def ledColorToPins(self, ledColor):
         global colorPinDict
         ledColorlow = ledColor.lower()
@@ -64,14 +66,14 @@ class RGBLed:
     def restoreColor (self):
         self.RGBset(colorTuple = self.mem)
     
-    def flash(self, flashFrequency = 20, color = 'R'):
-        glob.enable["flash"].set(True)
+    def flash(self, conditionMO, flashFrequency = 20, color = 'R'):
+        conditionMO.set(True)
         self.memorizeCurrentColor()
         self.RGBoff()
         
         pinTuple = self.ledColorToPins(color)
 
-        glob.flashPins(flashFrequency, glob.enable["flash"], pinTuple, [self.restoreColor])
+        glob.flashPins(flashFrequency, conditionMO, pinTuple, [self.restoreColor])
     
     def threadedBlink(self, R = None, G = None, B = None, colorTuple = None, times = 3):
         thread(self.quickBlink, R, G, B, colorTuple, times)

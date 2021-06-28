@@ -17,9 +17,10 @@ import communication.comm as comm
 
 import alarm.led as led
 import alarm.buzzer as buzzer
+import alarm.controlcenter as cc
+import alarm.datacenter as dc
 import glob
 
-pinBuzzer = D15.PWM
 #pinPhotoresist = A2
 
 pinIR = D5
@@ -34,73 +35,14 @@ def initIO():
     
     glob.pad = keypad.KeyPad(invert = True)
     
-    print("Setting up glob.ledRGB...")
-    glob.ledRGB = led.RGBLed(D4, D22, D23) #R, G, B
-    glob.ledRGB.RGBoff()
-    
-    print("Setting up buzzer...")
-    glob.buzzer = buzzer.Buzzer(pinBuzzer)
-    
     print("Setting up input pins...")
     pinMode(pinIR, INPUT)
     #pinMode(pinPhotoresist, INPUT)
+    
     #pinMode(pinSettingsButton, INPUT_PULLDOWN)
     pinMode(pinEnButton, INPUT_PULLUP)
-    
-    glob.lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
-    glob.ledRGB.threadedBlink(R = 1, G = 1)
-    sleep(750)
-    print("Setup completed")
-    settings.load()
-    ui.showDashboard(glob.lcd)
-    
     #comm.AlarmComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
-    #thread(readAmbientLight)
-
-def toggleOnOff():
-    status = glob.enable["alarm"].get()
-    
-    glob.enable["alarm"].set(not status)
-    glob.enable["audio"].set(not status)
-    glob.enable["flash"].set(not status)
-    
-    glob.lcd.lock.acquire()
-    if (glob.enable["alarm"].get() == True):
-        glob.ledRGB.RGBset(0, 0, 1)
-        print("Sistema abilitato")
-        glob.lcd.printAtPos(glob.lcd.CGRAM[4], glob.lcd.nCols-1, 0) #EXCLAMATION
-    else:
-        glob.ledRGB.memorizeColor(0, 0, 0)
-        stopAlarm()
-        glob.ledRGB.RGBoff()
-        glob.lcd.printAtPos(' ', glob.lcd.nCols-1, 0)
-        print("Sistema disabilitato")
-    glob.lcd.lock.release()
-        
-    
-def intrusione():
-    if (glob.enable["alarm"].get() == True):
-        ui.stopDashboard(glob.lcd)
-        glob.ledRGB.flash(flashFrequency = 20, color = 'R')
-        glob.buzzer.play()
-        print("Intrusione!!!")
-        glob.lcd.lock.acquire()
-        glob.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
-    else:
-        print("Movimento rilevato... ma l'allarme non e' inserito")
-        glob.lcd.lock.acquire()
-        glob.lcd.printLine("Alarm busy...", 1, align = "CENTER")
-    
-    glob.lcd.lock.release()
-    print("lock released")
-
-def stopAlarm():
-    print("Alarm signal down...")
-        
-    glob.enable["audio"].set(False)
-    glob.enable["flash"].set(False)
-    
-    ui.showDashboard(glob.lcd)
+    print("Setup completed")
         
 def initLCD(port = I2C0):
     lcdObj = lcdi2c.LCDI2C(port, nCols=16, nRows=2)
@@ -120,9 +62,19 @@ def initLCD(port = I2C0):
     return lcdObj
 
 initIO()
-#PINS MUST BE ALREADY INITIALIZED, BEFORE THESE INTERRUPTS ARE SET UP
 
-onPinFall(pinEnButton, toggleOnOff)
 #onPinRise(pinSettingsButton, settings.userSetup)
-onPinRise(pinIR, intrusione)
-onPinFall(pinIR, stopAlarm)
+
+glob.lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
+
+ledRGB = led.RGBLed(D4, D22, D23)
+ledRGB.threadedBlink(R = 1, G = 1)
+
+sleep(750)
+settings.load()
+
+alarmDataCenter = dc.DataCenter(1, 1, 0)
+controlCenter = cc.ControlCenter(glob.lcd, ledRGB, buzzer.Buzzer(D15.PWM), pinEnButton, pinIR)
+localDashboard = ui.LocalDashboard(alarmDataCenter, glob.lcd, controlCenter.runDashboard)
+
+localDashboard.show()

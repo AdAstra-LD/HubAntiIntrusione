@@ -22,15 +22,16 @@ class Buzzer:
         # reset period
         if abs(self.currentFreq - finalFreq) < abs(increment):
             self.currentFreq = initialFreq
-            print("ping")
+            #print("ping")
                 
-    def play(self, initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
+    def play(self, conditionMO, initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
         if initialFreq == 0 or initialFreq < finalFreq or delay == 0 or increment == 0:
             return
         
-        glob.enable["audio"].set(True)
+        conditionMO.set(True)
         
         self.currentFreq = initialFreq
-        thread(glob.timedRepeat, delay, glob.enable["audio"], 
-            [self.loopSound], [[initialFreq, finalFreq, increment, delay]], #funzioni di start
-            [pwm.write], [[self.pin, 0, 0]]) #funzioni finali
+            
+        thread(glob.timedRepeat, delay, conditionMO, 
+            (self.loopSound,), [[initialFreq, finalFreq, increment, delay]], #funzioni di start
+            (pwm.write,), [[self.pin, 0, 0]]) #funzioni finali

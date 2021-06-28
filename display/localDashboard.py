@@ -1,92 +1,92 @@
 import threading
-import alarm.datacenter as datacenter
 import glob
 import mutableObject as mo
 
-running = False
-
-dataRange = { 
-    datacenter.temperatureKey : (-99, 99),
-    datacenter.humidityKey : (0, 100),
-    datacenter.lightKey : (0, 100)
-}
-
-decimalPos = { 
-    datacenter.temperatureKey : mo.Mutable(1),
-    datacenter.humidityKey : mo.Mutable(1),
-    datacenter.lightKey : mo.Mutable(0)
-}
-
-iconsLastWrittenPosition = { 
-    datacenter.temperatureKey : mo.Mutable((0, 1)),
-    datacenter.humidityKey : mo.Mutable((0, 1)),
-    datacenter.lightKey : mo.Mutable((0, 0))
-}
-
-def calculateMaxLength(key):
-    return 1 + max(len(str(dataRange[key][0])), len(str(dataRange[key][1]))) #icona + maxCifre intere + eventuale segno
-
-def showDashboard(lcd):
-    global running
-    
-    if running:
-        print("Dashboard already running...")
-        return
-    
-    print("Starting dashboard...")
-    
-    lcd.lock.acquire()
-    lcd.clear()
-    lcd.lock.release()
+class LocalDashboard():
+    def __init__(self, alarmDataCenter, lcd, ext_enable = None):
+        self.enable = {
+            #Global Vars for tasks
+            "general" : mo.Mutable(False),
+            "readLight" : mo.Mutable(True),
+            "readTemperature" : mo.Mutable(True),
+            "readHumidity" : mo.Mutable(True)
+        }
         
-    glob.enable["read" + glob.stringCapitalize(datacenter.temperatureKey)].set(True)
-    glob.enable["read" + glob.stringCapitalize(datacenter.humidityKey)].set(True)
-    glob.enable["read" + glob.stringCapitalize(datacenter.lightKey)].set(True)
-    
-    running = True
-    
-    thread(glob.timedRepeat, 1100, glob.enable["read" + glob.stringCapitalize(datacenter.temperatureKey)], 
-        (datacenter.dummy, displayData), 
-        ([datacenter.temperatureKey, -10, 40], [lcd, mo.Mutable((0, 1)), (0, 0), lcd.CGRAM[0], datacenter.temperatureKey, datacenter.sensorStorage[datacenter.temperatureKey], lcd.CGRAM[3]]))
-    
-    thread(glob.timedRepeat, 9000, glob.enable["read" + glob.stringCapitalize(datacenter.humidityKey)], 
-        (datacenter.dummy, displayData), 
-        ([datacenter.humidityKey, 0, 100], [lcd, iconsLastWrittenPosition[datacenter.temperatureKey], (1, 0), lcd.CGRAM[1], datacenter.humidityKey, datacenter.sensorStorage[datacenter.humidityKey], "%"]))
+        self.lcd = lcd
+        self.dataCenter = alarmDataCenter
+        self.ext_enable = ext_enable
         
-    thread(glob.timedRepeat, 1250, glob.enable["read" + glob.stringCapitalize(datacenter.lightKey)], 
-        (datacenter.dummy, displayData), 
-        ([datacenter.lightKey, 0, 100], [lcd, mo.Mutable((0, 0)), (0, 0), lcd.CGRAM[2], datacenter.lightKey, datacenter.sensorStorage[datacenter.lightKey], "%"]))
-
-def stopDashboard(lcd):
-    global running 
-    
-    print("Stopping dashboard")
-    glob.enable["read" + glob.stringCapitalize(datacenter.temperatureKey)].set(False)
-    glob.enable["read" + glob.stringCapitalize(datacenter.humidityKey)].set(False)
-    glob.enable["read" + glob.stringCapitalize(datacenter.lightKey)].set(False)
-    
-    running = False
-
-def displayData(lcd, xyReferenceMO, xyOffset, icon, key, dataMO, extraChar = "", dynamicPadding = False):
-    nDecimals = decimalPos[key].get()
-    shortString = (str('%.*f') % (nDecimals, dataMO.get()))
-    shortString = shortString + extraChar
-    
-    maxLength = calculateMaxLength(key)
-    if (nDecimals > 0):
-        maxLength = maxLength + nDecimals + 1 #tenere in considerazione il punto
-    
-    lcd.lock.acquire() # {
-    xyReference = xyReferenceMO.get()
-    lcd.printAtPos(glob.stringRpad(icon + shortString, maxLength+1), xyReference[0]+xyOffset[0], xyReference[1]+xyOffset[1])
-    cursorPos = lcd.getCursorPos()
-    lcd.lock.release()
-    # }
-    
-    if dynamicPadding:
-        iconsLastWrittenPosition[key].set((cursorPos[0]-maxLength+len(shortString), cursorPos[1]))
-    else:
-        iconsLastWrittenPosition[key].set((cursorPos[0], cursorPos[1]))
+        self.iconsLastWrittenPosition = { 
+            glob.temperatureKey : mo.Mutable((0, 1)),
+            glob.humidityKey : mo.Mutable((0, 1)),
+            glob.lightKey : mo.Mutable((0, 0))
+        }
         
-def showStatus(lcd, wifiStatus, lockedStatus):
-    pass
+    def show(self):
+        if self.enable["general"].get() == True:
+            print("Dashboard already running...")
+            return
+        
+        print("Starting dashboard...")
+        
+        self.lcd.lock.acquire()
+        self.lcd.clear()
+        self.lcd.lock.release()
+        print("lcd cleared...")
+            
+        self.enable["read" + glob.stringCapitalize(glob.temperatureKey)].set(True)
+        self.enable["read" + glob.stringCapitalize(glob.humidityKey)].set(True)
+        self.enable["read" + glob.stringCapitalize(glob.lightKey)].set(True)
+        print("Control signals enabled...")
+        
+        self.enable["general"].set(True)
+        
+        thread(glob.timedRepeat, 1100, self.enable["read" + glob.stringCapitalize(glob.temperatureKey)], 
+            (self.dataCenter.dummy, self.displayData), 
+            ([glob.temperatureKey, -10, 40], [mo.Mutable((0, 1)), (0, 0), self.lcd.CGRAM[0], glob.temperatureKey, self.dataCenter.sensorStorage[glob.temperatureKey], self.lcd.CGRAM[3]]),
+            self.ext_enable)
+        
+        thread(glob.timedRepeat, 9000, self.enable["read" + glob.stringCapitalize(glob.humidityKey)], 
+            (self.dataCenter.dummy, self.displayData), 
+            ([glob.humidityKey, 0, 100], [self.iconsLastWrittenPosition[glob.temperatureKey], (1, 0), self.lcd.CGRAM[1], glob.humidityKey, self.dataCenter.sensorStorage[glob.humidityKey], "%"]))
+            
+        thread(glob.timedRepeat, 1250, self.enable["read" + glob.stringCapitalize(glob.lightKey)], 
+            (self.dataCenter.dummy, self.displayData), 
+            ([glob.lightKey, 0, 100], [mo.Mutable((0, 0)), (0, 0), self.lcd.CGRAM[2], glob.lightKey, self.dataCenter.sensorStorage[glob.lightKey], "%"]))
+        
+        print("Threads running...")
+    
+    def stopDashboard(self):
+        print("Stopping dashboard")
+        self.enable["read" + glob.stringCapitalize(glob.temperatureKey)].set(False)
+        self.enable["read" + glob.stringCapitalize(glob.humidityKey)].set(False)
+        self.enable["read" + glob.stringCapitalize(glob.lightKey)].set(False)
+        self.enable["general"].set(False)
+    
+    def displayData(self, xyReferenceMO, xyOffset, icon, key, dataMO, extraChar = "", dynamicPadding = False):
+        print(str(self.dataCenter.decimalPos) + " " + str(key))
+        print(self.dataCenter.decimalPos[key])
+        nDecimals = self.dataCenter.decimalPos[key].get()
+        shortString = (str('%.*f') % (nDecimals, dataMO.get()))
+        shortString = shortString + extraChar
+        
+        print("Calculating maxlength with " + str(key) + " as the key...")
+        maxLength = self.dataCenter.calculateMaxLength(key)
+        if (nDecimals > 0):
+            maxLength = maxLength + nDecimals + 1 #tenere in considerazione il punto
+        
+        print("Requesting lcd print...")
+        self.lcd.lock.acquire() # {
+        xyReference = xyReferenceMO.get()
+        self.lcd.printAtPos(glob.stringRpad(icon + shortString, maxLength+1), xyReference[0]+xyOffset[0], xyReference[1]+xyOffset[1])
+        cursorPos = self.lcd.getCursorPos()
+        self.lcd.lock.release()
+        # }
+        
+        if dynamicPadding:
+            self.iconsLastWrittenPosition[key].set((cursorPos[0]-maxLength+len(shortString), cursorPos[1]))
+        else:
+            self.iconsLastWrittenPosition[key].set((cursorPos[0], cursorPos[1]))
+            
+    def showStatus(self, wifiStatus, lockedStatus):
+        pass
