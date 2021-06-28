@@ -7,18 +7,18 @@ import threading
 import pwm
 import i2c
 
-import display.LCDI2C as lcdi2c
-import display.specialChars as chars
-import display.localDashboard as ui
+import peripherals.LCDI2C as lcdi2c
+import peripherals.led as led
+import peripherals.buzzer as buzzer
+import peripherals.specialChars as chars
+import peripherals.keypad as keypad
 
-import userinput.settings as settings
-import userinput.keypad as keypad
-import communication.comm as comm
+#import communication.comm as comm
 
-import alarm.led as led
-import alarm.buzzer as buzzer
 import alarm.controlcenter as cc
 import alarm.datacenter as dc
+import alarm.localDashboard as ui
+import alarm.settings as settings
 import glob
 
 #pinPhotoresist = A2

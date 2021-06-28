@@ -41,16 +41,16 @@ class LocalDashboard():
         
         self.enable["general"].set(True)
         
-        thread(glob.timedRepeat, 1100, self.enable["read" + glob.stringCapitalize(glob.temperatureKey)], 
+        thread(glob.timedRepeat, 1500, self.enable["read" + glob.stringCapitalize(glob.temperatureKey)], 
             (self.dataCenter.dummy, self.displayData), 
             ([glob.temperatureKey, -10, 40], [mo.Mutable((0, 1)), (0, 0), self.lcd.CGRAM[0], glob.temperatureKey, self.dataCenter.sensorStorage[glob.temperatureKey], self.lcd.CGRAM[3]]),
             self.ext_enable)
         
-        thread(glob.timedRepeat, 9000, self.enable["read" + glob.stringCapitalize(glob.humidityKey)], 
+        thread(glob.timedRepeat, 5000, self.enable["read" + glob.stringCapitalize(glob.humidityKey)], 
             (self.dataCenter.dummy, self.displayData), 
             ([glob.humidityKey, 0, 100], [self.iconsLastWrittenPosition[glob.temperatureKey], (1, 0), self.lcd.CGRAM[1], glob.humidityKey, self.dataCenter.sensorStorage[glob.humidityKey], "%"]))
             
-        thread(glob.timedRepeat, 1250, self.enable["read" + glob.stringCapitalize(glob.lightKey)], 
+        thread(glob.timedRepeat, 5000, self.enable["read" + glob.stringCapitalize(glob.lightKey)], 
             (self.dataCenter.dummy, self.displayData), 
             ([glob.lightKey, 0, 100], [mo.Mutable((0, 0)), (0, 0), self.lcd.CGRAM[2], glob.lightKey, self.dataCenter.sensorStorage[glob.lightKey], "%"]))
         

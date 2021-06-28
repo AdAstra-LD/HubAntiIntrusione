@@ -1,7 +1,8 @@
+import peripherals.keypad as pad
+import peripherals.specialChars as chars
+
 import memory.customflash as flash
 import memory.memorymap as memmap
-import userinput.keypad as pad
-import display.specialChars as chars
 import glob
 
 SYSTEM_UNINITIALIZED = 0
