@@ -273,30 +273,6 @@ class LCDI2C():
 #----------------------------------------------------------#
 # FUNZIONI SCRITTURA --------------------------------------#
 #----------------------------------------------------------#
-    def splitSentence(self, sentence): 
-        stringCopy = sentence
-        
-        stringList = []
-        posBackslash = 0
-        while (len(stringCopy) > 0 and posBackslash >= 0):
-            #__builtins__.print(str(stringCopy)) 
-            
-            posBackslash = stringCopy.find('\n')
-            
-            #__builtins__.print("Found backslash at " + str(posBackslash))
-            
-            if (posBackslash < 0):
-                for x in range (glob.ceil(len(stringCopy) / self.nCols)):
-                    stringList.append(stringCopy[:self.nCols].strip())
-                    stringCopy = stringCopy[self.nCols:]
-            else:
-                stringList.append(stringCopy[:posBackslash].strip())
-                stringCopy = stringCopy[(posBackslash+1):]
-                
-            #__builtins__.print("Ho aggiunto la stringa " +  '"' + str(stringList[len(stringList)-1] + '"'))
-            
-        return stringList
-        
     def writeCGRAM(self, charTuple, CGRAMslot=0):
         #Write a custom character to a chosen CGRAM slot
         
@@ -351,7 +327,7 @@ class LCDI2C():
         if (self.i2cport == None):
             return
         
-        rowsToPrint = self.splitSentence(text)
+        rowsToPrint = glob.splitSentence(text, self.nCols)
         numRowsToPrint = len(rowsToPrint)
         
         currentLine = ""

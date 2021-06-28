@@ -3,11 +3,7 @@ import alarm.datacenter as datacenter
 import glob
 import mutableObject as mo
 
-iconsLastWrittenPosition = { 
-    datacenter.temperatureKey : mo.Mutable((0, 0)),
-    datacenter.humidityKey : mo.Mutable((0, 0)),
-    datacenter.lightKey : mo.Mutable((0, 0))
-}
+running = False
 
 dataRange = { 
     datacenter.temperatureKey : (-99, 99),
@@ -21,10 +17,33 @@ decimalPos = {
     datacenter.lightKey : mo.Mutable(0)
 }
 
+iconsLastWrittenPosition = { 
+    datacenter.temperatureKey : mo.Mutable((0, 1)),
+    datacenter.humidityKey : mo.Mutable((0, 1)),
+    datacenter.lightKey : mo.Mutable((0, 0))
+}
+
+def calculateMaxLength(key):
+    return 1 + max(len(str(dataRange[key][0])), len(str(dataRange[key][1]))) #icona + maxCifre intere + eventuale segno
+
 def showDashboard(lcd):
+    global running
+    
+    if running:
+        print("Dashboard already running...")
+        return
+    
+    print("Starting dashboard...")
+    
     lcd.lock.acquire()
     lcd.clear()
     lcd.lock.release()
+        
+    glob.enable["read" + glob.stringCapitalize(datacenter.temperatureKey)].set(True)
+    glob.enable["read" + glob.stringCapitalize(datacenter.humidityKey)].set(True)
+    glob.enable["read" + glob.stringCapitalize(datacenter.lightKey)].set(True)
+    
+    running = True
     
     thread(glob.timedRepeat, 1100, glob.enable["read" + glob.stringCapitalize(datacenter.temperatureKey)], 
         (datacenter.dummy, displayData), 
@@ -38,36 +57,36 @@ def showDashboard(lcd):
         (datacenter.dummy, displayData), 
         ([datacenter.lightKey, 0, 100], [lcd, mo.Mutable((0, 0)), (0, 0), lcd.CGRAM[2], datacenter.lightKey, datacenter.sensorStorage[datacenter.lightKey], "%"]))
 
+def stopDashboard(lcd):
+    global running 
+    
+    print("Stopping dashboard")
+    glob.enable["read" + glob.stringCapitalize(datacenter.temperatureKey)].set(False)
+    glob.enable["read" + glob.stringCapitalize(datacenter.humidityKey)].set(False)
+    glob.enable["read" + glob.stringCapitalize(datacenter.lightKey)].set(False)
+    
+    running = False
 
 def displayData(lcd, xyReferenceMO, xyOffset, icon, key, dataMO, extraChar = "", dynamicPadding = False):
-    lcd.lock.acquire()
-
-    xyReference = xyReferenceMO.get()
     nDecimals = decimalPos[key].get()
-    
-    #Print Temperature Symbol 
-    lcd.printAtPos(icon, xyReference[0]+xyOffset[0], xyReference[1]+xyOffset[1]) 
-    
     shortString = (str('%.*f') % (nDecimals, dataMO.get()))
     shortString = shortString + extraChar
     
-    maxLength = 1 + max(len(str(dataRange[key][0])), len(str(dataRange[key][1]))) #icona + maxCifre intere + eventuale segno
+    maxLength = calculateMaxLength(key)
     if (nDecimals > 0):
         maxLength = maxLength + nDecimals + 1 #tenere in considerazione il punto
-        
-    lcd.print(glob.stringRpad(shortString, maxLength)) #1 per segno, 2 per cifre intere, 1 per punto, decimali, 1 per spazio
     
+    lcd.lock.acquire() # {
+    xyReference = xyReferenceMO.get()
+    lcd.printAtPos(glob.stringRpad(icon + shortString, maxLength+1), xyReference[0]+xyOffset[0], xyReference[1]+xyOffset[1])
     cursorPos = lcd.getCursorPos()
+    lcd.lock.release()
+    # }
+    
     if dynamicPadding:
         iconsLastWrittenPosition[key].set((cursorPos[0]-maxLength+len(shortString), cursorPos[1]))
     else:
         iconsLastWrittenPosition[key].set((cursorPos[0], cursorPos[1]))
-    
-    lcd.lock.release()
-    
+        
 def showStatus(lcd, wifiStatus, lockedStatus):
-    lcd.lock.acquire()
-    
-    #lcd.printAtPos(lcd.CGRAM[CGRAMcharPos], 0, 1)
-    
-    lcd.lock.release()
+    pass

@@ -65,7 +65,6 @@ def toggleOnOff():
     glob.enable["flash"].set(not status)
     
     glob.lcd.lock.acquire()
-
     if (glob.enable["alarm"].get() == True):
         glob.ledRGB.RGBset(0, 0, 1)
         print("Sistema abilitato")
@@ -76,11 +75,12 @@ def toggleOnOff():
         glob.ledRGB.RGBoff()
         glob.lcd.printAtPos(' ', glob.lcd.nCols-1, 0)
         print("Sistema disabilitato")
-        
     glob.lcd.lock.release()
-
+        
+    
 def intrusione():
     if (glob.enable["alarm"].get() == True):
+        ui.stopDashboard(glob.lcd)
         glob.ledRGB.flash(flashFrequency = 20, color = 'R')
         glob.buzzer.play()
         print("Intrusione!!!")
@@ -90,14 +90,17 @@ def intrusione():
         print("Movimento rilevato... ma l'allarme non e' inserito")
         glob.lcd.lock.acquire()
         glob.lcd.printLine("Alarm busy...", 1, align = "CENTER")
+    
+    glob.lcd.lock.release()
+    print("lock released")
 
 def stopAlarm():
     print("Alarm signal down...")
-    glob.lcd.clear()
-    glob.lcd.lock.release()
-    
+        
     glob.enable["audio"].set(False)
     glob.enable["flash"].set(False)
+    
+    ui.showDashboard(glob.lcd)
         
 def initLCD(port = I2C0):
     lcdObj = lcdi2c.LCDI2C(port, nCols=16, nRows=2)
