@@ -2,22 +2,25 @@ import threading
 
 import mutableObject as mo
 import glob
+#from smartsensors import digitalSensors as ds
 
 class ControlCenter():
     def __init__(self, lcd, ledRGB, buzzer, enableButton, IRsensor):
         self.enable = { 
             #Global Vars for the alarm
             "dashboard" : mo.Mutable(True),
-            "alarm" : mo.Mutable(False),
             "audio" : mo.Mutable(True),
-            "flash" : mo.Mutable(True)
+            "flash" : mo.Mutable(True),
+            "alarm" : mo.Mutable(False),
+            "mqttSend" : mo.Mutable(False),
         }
         
         self.running = { 
             #Global Vars for system processes
-            "alarm" : mo.Mutable(False),
             "wifi" : mo.Mutable(False),
-            "mqtt" : mo.Mutable(False)
+            "mqtt" : mo.Mutable(False),
+            "alarm" : mo.Mutable(False),
+            "mqttSend" : mo.Mutable(False),
         }
         
         self.dashboard = None
@@ -28,11 +31,8 @@ class ControlCenter():
         
         #PINS MUST BE ALREADY INITIALIZED, BEFORE THESE INTERRUPTS ARE SET UP
         onPinFall(enableButton, self.toggleOnOff, debounce=100)
-        onPinRise(IRsensor, self.intrusione)
-        onPinFall(IRsensor, self.stopAlarm, debounce=700)
-    
-    def linkDashboard(self, dashboard):
-        self.dashboard = dashboard
+        onPinRise(IRsensor, self.intrusione, debounce = 500)
+        onPinFall(IRsensor, self.stopAlarm, debounce = 500)
 
     def toggleOnOff(self):
         isAlarmOn = self.enable["alarm"].get()
@@ -52,7 +52,7 @@ class ControlCenter():
             
         
     def intrusione(self):
-        self.dashboard.enable.clear()
+        self.dashboard.continueFlag.clear()
         if (self.enable["alarm"].get() == True):
             self.running["alarm"].set(True)
             print("Intrusione!!!")
@@ -77,5 +77,5 @@ class ControlCenter():
             self.lcd.lock.release()
             print("Alarm signal down...")
         
-        self.dashboard.enable.set()
+        self.dashboard.continueFlag.set()
         self.dashboard.displayStatus()

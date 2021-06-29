@@ -303,12 +303,14 @@ class LCDI2C():
             self.moveCursor(self.cursorPos[0], row)
         
         #### DO NOT CHANGE ORDER OF ADDITION ####
-        if align == 'LEFT' or align == 'L':
-            self.moveCursor(0, self.cursorPos[1])
-        elif align == 'RIGHT' or align == 'R':
-            self.moveCursor(self.nCols-strLen, self.cursorPos[1])
-        elif align == 'CENTER' or align == 'CENTRE' or align == 'C':
-            self.moveCursor((self.nCols-strLen)//2, self.cursorPos[1])
+        if align is not None:
+            align = align.upper()
+            if align == 'LEFT' or align == 'L' or align == "SINISTRA":
+                self.moveCursor(0, self.cursorPos[1])
+            elif align == 'RIGHT' or align == 'R' or align == "DESTRA":
+                self.moveCursor(self.nCols-strLen, self.cursorPos[1])
+            elif align == 'CENTER' or align == 'CENTRE' or align == 'C' or align == "CENTRO":
+                self.moveCursor((self.nCols-strLen)//2, self.cursorPos[1])
         
         if delay == 0:
             for b in byteArrayString:
@@ -334,9 +336,9 @@ class LCDI2C():
     
     def printLine(self, text, row = 0, align='LEFT', delay = 0, sentenceDelay = 1500, clearPrevious = True):
         #Stampa text come frase intera sull'LCD, andando a capo automaticamente.
-
-        #text:      bytes or str object, str object will be encoded with ASCII
-        #row:       row number is zero-based
+        #row:               riga di schermo su cui stampare. 
+        #text:              bytes o stringa da stampare
+        #delay:             delay tra la stampa di un char e l'altra
         #align:     could be 'LEFT' | 'L' (default), 'RIGHT' | 'R' or 'CENTER' | 'CENTRE' | 'C'
         if self.i2cport is None:
             return
@@ -363,14 +365,15 @@ class LCDI2C():
             #__builtins__.print("currentLine = " + currentLine)
             #__builtins__.print("la stringa da stampare è lunga " + str(len(currentLine)))
             
-            
-            #### DO NOT CHANGE ORDER OF ADDITION ####
-            if align == 'LEFT' or align == 'L':
-                currentLine = currentLine + b' ' * whitespaceCount
-            elif align == 'RIGHT' or align == 'R':
-                currentLine = b' ' * whitespaceCount + currentLine
-            elif align == 'CENTER' or align == 'CENTRE' or align == 'C':
-                currentLine = b' ' * (whitespaceCount // 2) + currentLine + b' ' * (whitespaceCount // 2)
+            if align is not None:
+                align = align.upper()
+                #### DO NOT CHANGE ORDER OF ADDITION ####
+                if align == 'LEFT' or align == 'L' or  align == "SINISTRA":
+                    currentLine = currentLine + b' ' * whitespaceCount
+                elif align == 'RIGHT' or align == 'R' or align == "DESTRA":
+                    currentLine = b' ' * whitespaceCount + currentLine
+                elif align == 'CENTER' or align == 'CENTRE' or align == 'C' or align == "CENTRO":
+                    currentLine = b' ' * (whitespaceCount // 2) + currentLine + b' ' * (whitespaceCount // 2)
             
             #print current line to LCD
             self.printAtPos(currentLine, 0, (r+row) % self.nRows, delay)

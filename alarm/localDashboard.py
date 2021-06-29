@@ -13,8 +13,8 @@ class LocalDashboard():
         }
         
         self.running = False
-        self.enable = threading.Event()
-        self.enable.set()
+        self.continueFlag = threading.Event()
+        self.continueFlag.set()
         
         self.lcd = lcd
         self.dataCenter = alarmDataCenter
@@ -31,25 +31,22 @@ class LocalDashboard():
             print("Dashboard already running...")
             return
         
-        if not self.enable.is_set():
-            print("Dashboard is disabled in ControlCenter and couldn't be started.")
+        if not self.continueFlag.is_set():
+            print("Dashboard is disabled and can't be started.")
             return
         
         print("Starting dashboard...")
+        self.running = True
         
         self.lcd.lock.acquire()
         self.lcd.clear()
         self.lcd.lock.release()
-        print("lcd cleared...")
             
         self.taskManager["read" + glob.stringCapitalize(glob.temperatureKey)].set(True)
         self.taskManager["read" + glob.stringCapitalize(glob.humidityKey)].set(True)
         self.taskManager["read" + glob.stringCapitalize(glob.lightKey)].set(True)
-        print("Control signals enabled...")
         
-        self.running = True
-        
-        thread(glob.timedRepeat, 1500, self.taskManager["read" + glob.stringCapitalize(glob.temperatureKey)], self.enable,
+        thread(glob.timedRepeat, 3000, self.taskManager["read" + glob.stringCapitalize(glob.temperatureKey)], self.continueFlag,
             [
                 self.dataCenter.dummy, self.displayData
             ], 
@@ -59,7 +56,7 @@ class LocalDashboard():
             ]
         )
         
-        thread(glob.timedRepeat, 4000, self.taskManager["read" + glob.stringCapitalize(glob.humidityKey)], self.enable,
+        thread(glob.timedRepeat, 6000, self.taskManager["read" + glob.stringCapitalize(glob.humidityKey)], self.continueFlag,
             [   
                 self.dataCenter.dummy, self.displayData, 
                 self.dataCenter.dummy, self.displayData
@@ -107,11 +104,23 @@ class LocalDashboard():
             self.iconCharsLastWrittenPosition[key].set((cursorPos[0], cursorPos[1]))
             
     def displayStatus(self):
+        if not self.running:
+            print("Dashboard not running...")
+            return
+        
+        if not self.continueFlag.is_set():
+            print("Dashboard is disabled and can't be started.")
+            return
+        
         string = ""
         
-        string += self.lcd.CGRAM[4] if self.controlCenter.enable["alarm"].get() else "" #EXCLAMATION
+        if self.controlCenter.enable["alarm"].get():
+            string += self.lcd.CGRAM[4]  #EXCLAMATION
+            
         string += self.lcd.CGRAM[6]
-        string += self.lcd.CGRAM[7] if self.controlCenter.running["mqtt"].get() else "" #MQTT Logo
+        
+        if self.controlCenter.running["mqtt"].get():
+            string += self.lcd.CGRAM[7] #MQTT Logo
         
         self.lcd.lock.acquire()
         self.lcd.writeCGRAM(chars.MQTT, 7) #this acts as a temp buffer

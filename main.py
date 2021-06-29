@@ -13,7 +13,7 @@ import peripherals.buzzer as buzzer
 import peripherals.specialChars as chars
 import peripherals.keypad as keypad
 
-#import communication.comm as comm
+import communication.comm as comm
 
 import alarm.controlcenter as cc
 import alarm.datacenter as dc
@@ -25,7 +25,6 @@ import glob
 
 pinIR = D5
 pinEnButton = D21
-#pinSettingsButton = D2
 
 
 def initIO():
@@ -62,8 +61,6 @@ def initLCD(port = I2C0):
 
 initIO()
 
-#onPinRise(pinSettingsButton, settings.userSetup)
-
 glob.lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
 
 ledRGB = led.RGBLed(D4, D22, D23)
@@ -74,10 +71,10 @@ settings.load()
 
 alarmDataCenter = dc.DataCenter(1, 1, 0)
 alarmControlCenter = cc.ControlCenter(glob.lcd, ledRGB, buzzer.Buzzer(D15.PWM), pinEnButton, pinIR)
-
 localDashboard = ui.LocalDashboard(alarmDataCenter, alarmControlCenter, glob.lcd)
-alarmControlCenter.linkDashboard(localDashboard)
+alarmControlCenter.dashboard = localDashboard
 
 localDashboard.show()
 
-#comm.AlarmComm(alarmControlCenter, "FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
+commCenter = comm.AlarmComm(alarmControlCenter, alarmDataCenter, "FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
+commCenter.dataSendLoop(alarmControlCenter.enable["mqttSend"], 1500)

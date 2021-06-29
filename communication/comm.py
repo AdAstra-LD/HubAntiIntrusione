@@ -3,16 +3,22 @@ from mqtt import mqtt
 
 # import wifi support
 from espressif.esp32net import esp32wifi as wifi_driver
-
-import streams
+import threading
+import mutableObject as mo
+import peripherals.specialChars as chars
 import glob
 
 wifi_driver.auto_init()
 
 class AlarmComm():
-    def __init__(self, alarmControlCenter, networkName, password, attempts = 5):
+    def __init__(self, alarmControlCenter, alarmDataCenter, networkName, password, attempts = 5, preferredQoS = 2):
         self.controlCenter = alarmControlCenter
-        streams.serial()
+        self.dataCenter = alarmDataCenter
+        self.continueFlag = threading.Event()
+        self.continueFlag.set()
+        self.sending = False
+        
+        self.changeQoS(preferredQoS)
         
         for retry in range(attempts):
             try:
@@ -26,7 +32,8 @@ class AlarmComm():
                     glob.lcd.lock.acquire()
                     print("Too many errors. Not gonna try anymore.")
                     glob.lcd.clear()
-                    glob.lcd.printLine("WiFi connection\nfailed.")
+                    glob.lcd.writeCGRAM(chars.SAD_FACE, 7) #Temp buffer --> #SAD
+                    glob.lcd.printLine("WiFi connection\nfailed. " + glob.lcd.CGRAM[7])
                     sleep(4000)
                     glob.lcd.clear()
                     glob.lcd.lock.release()
@@ -37,11 +44,12 @@ class AlarmComm():
         self.controlCenter.running["wifi"].set(True)
         
         #try:
-        client = mqtt.Client("Test", clean_session = True)
+        self.mqttclient = mqtt.Client("Test", clean_session = True)
         for retry in range(attempts):
             try:
                 print("Attempting connection with MQTT broker...")
-                client.connect("broker.mqtt-dashboard.com", keepalive = 20)
+                self.mqttclient.connect("192.168.1.67", port=1886, keepalive = 20)
+                print("MQTT connection successful.")
                 break
             except Exception as e:
                 print("MQTT connection error: ", e)
@@ -50,7 +58,8 @@ class AlarmComm():
                     glob.lcd.lock.acquire()
                     print("Too many errors. Not gonna try anymore.")
                     glob.lcd.clear()
-                    glob.lcd.printLine("MQTT connection\nfailed.")
+                    glob.lcd.writeCGRAM(chars.SAD_FACE, 7) #Temp buffer --> #SAD
+                    glob.lcd.printLine("MQTT connection\nfailed. " + glob.lcd.CGRAM[7])
                     sleep(4000)
                     glob.lcd.clear()
                     glob.lcd.lock.release()
@@ -62,3 +71,61 @@ class AlarmComm():
         self.controlCenter.dashboard.displayStatus()
         #except Exception as e:
         #    sleep(150)
+        
+    def changeQoS(self, newQoS):
+        self.preferredQoS = mo.Mutable(newQoS) if type(newQoS) < PFLOAT else newQoS
+        #wrap object if the type is simple [int, smallint...] otherwise keep as-is
+    
+    def dataSendLoop(self, enableConditionMO, period):
+        enableConditionMO.set(True)
+        
+        if self.sending:
+            print("Resuming MQTT data thread")
+            self.continueFlag.set()
+        else:
+            print("Starting MQTT data thread")
+            self.mqttclient.loop()
+            #thread(self._sendAll, enableConditionMO, period)
+            self._sendAll(enableConditionMO, period)
+        
+        
+    def _sendAll(self, enableConditionMO, period, errorLimit = 5):
+        self.sending = True
+        errorCount = 0
+        while enableConditionMO.get() and errorCount < errorLimit: # {
+            try: 
+                if not self.continueFlag.is_set():
+                    print("MQTT data thread suspended")
+                
+                self.continueFlag.wait()
+                
+                for key in self.dataCenter.sensorStorage:
+                    nDecimals = self.dataCenter.decimalPos[key].get()
+                    data = self.dataCenter.sensorStorage[key].get()
+                    shortString = str('%.*f') % (nDecimals, data)
+                    print(shortString)
+                    self.mqttclient.publish(str("roomIOT2021" + '/' + key), shortString, self.preferredQoS.get())
+            
+                sleep(period)
+            except Exception as e:
+                print("MQTT Data process - Error! : ")
+                print(e)
+                errorCount += 1
+                self.mqttclient.reconnect()
+                sleep(200)
+        #}
+    
+        print("Stopping MQTT thread...")
+        
+        if errorCount >= errorLimit:
+            glob.lcd.lock.acquire()
+            print("Too many errors.")
+            glob.lcd.clear()
+            glob.lcd.writeCGRAM(chars.SAD_FACE, 7) #Temp buffer --> #SAD
+            glob.lcd.printLine("MQTT connection\ncrashed. " + glob.lcd.CGRAM[7])
+            sleep(2000)
+            glob.lcd.clear()
+            glob.lcd.lock.release()
+            self.controlCenter.dashboard.displayStatus()
+            
+        self.sending = False

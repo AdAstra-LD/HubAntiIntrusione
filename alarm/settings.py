@@ -29,11 +29,8 @@ def load():
 def userSetup():
     glob.lcd.clear()
     
-    glob.lcd.printLine("Welcome!", align = "C")
-    glob.lcd.shift()
-    
-    glob.lcd.writeCGRAM(chars.SMILEY_FACE, 7) 
-    glob.lcd.print(glob.lcd.CGRAM[7]) #SmileyFace
+    glob.lcd.writeCGRAM(chars.SMILEY_FACE, 7) #Temp buffer --> #SmileyFace
+    glob.lcd.printLine("Welcome! " + glob.lcd.CGRAM[7], delay = 20, align = "C")
     sleep(1500)
     
     glob.lcd.printLine("There are a few\nthings to set up")
