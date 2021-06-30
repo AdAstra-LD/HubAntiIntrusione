@@ -30,6 +30,7 @@ pinEnButton = D21
 htu21dconfig_attempts = 5
 runDashboardFlag = False
 
+import utilities.circularList as cl
 
 def initIO():
     global runDashboardFlag

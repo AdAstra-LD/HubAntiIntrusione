@@ -108,6 +108,8 @@ class CommCenter():
                         shortString = str('%.*f') % (nDecimals, data)
                         #print(shortString)
                         self.mqttclient.publish(str("roomIOT2021" + '/' + key), shortString, self.preferredQoS)
+                    for key in self.dataCenter.sensorHistory:
+                        self.mqttclient.publish(str("roomIOT2021" + '/H' + key), str(self.dataCenter.sensorHistory[key]), self.preferredQoS)
                     self.dataCenter.sensoreStorageLock.release()
                     sleep(period)
                 # }

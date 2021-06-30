@@ -2,6 +2,7 @@ import adc
 import utilities.mutableObject as mo
 import threading
 import glob
+import utilities.circularList as cList
 
 class DataCenter():
     def __init__(self, htu21d, decimalTemperature = 0, decimalHumidity = 0, decimalLight = 0):
@@ -13,10 +14,17 @@ class DataCenter():
         self.htu21d = htu21d
         
         self.sensoreStorageLock = threading.Lock()
+        
         self.sensorStorage = { 
             glob.temperatureKey : mo.Mutable(0.0),
             glob.humidityKey : mo.Mutable(0.0),
             glob.lightKey : mo.Mutable(0)
+        }
+        
+        self.sensorHistory = { 
+            glob.temperatureKey : cList.CircularNumericList(),
+            glob.humidityKey : cList.CircularNumericList(),
+            glob.lightKey : cList.CircularNumericList()
         }
         
         self.dataRanges = { 
@@ -63,11 +71,13 @@ class DataCenter():
     def readTemperature(self, htu):
         t = htu.get_temp()
         self.sensorStorage[glob.temperatureKey].set(t)
+        self.sensorHistory[glob.temperatureKey].add(t, self.decimalPos[glob.temperatureKey])
         return t# Read raw temperature
     
     def readHumidity(self, htu):
         h = htu.get_humid()
         self.sensorStorage[glob.humidityKey].set(h)
+        self.sensorHistory[glob.humidityKey].add(h, self.decimalPos[glob.humidityKey])
         return h # Read raw temperature
     
     def readLight(self, pinSensor, invert = False):
@@ -85,4 +95,5 @@ class DataCenter():
         val = random(lowerLimit, upperLimit*17)
         val = val/17
         self.sensorStorage[glob.lightKey].set(val)
+        self.sensorHistory[glob.lightKey].add(val, self.decimalPos[glob.lightKey])
         return self.sensorStorage[glob.lightKey].get()
