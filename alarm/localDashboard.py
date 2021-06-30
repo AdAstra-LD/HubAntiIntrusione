@@ -75,8 +75,9 @@ class LocalDashboard():
         shortString = shortString + extraChar
         
         #print("Calculating maxlength with " + str(key) + " as the key...")
-        maxLength = self.dataCenter.calculateMaxLength(key)
-        if (nDecimals > 0):
+        
+        maxLength = 1 + max(len(str(self.dataCenter.dataRanges[key][0])), len(str(self.dataCenter.dataRanges[key][1]))) #icona + max numero di Cifre intere e segno
+        if nDecimals > 0:
             maxLength = maxLength + nDecimals + 1 #tenere in considerazione il char punto
         
         # {

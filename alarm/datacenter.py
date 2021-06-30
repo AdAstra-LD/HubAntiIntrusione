@@ -63,10 +63,6 @@ class DataCenter():
             sleep(refreshTime)
             
         print("DataRetrieval process killed")
-        
-    
-    def calculateMaxLength(self, key):
-        return 1 + max(len(str(self.dataRanges[key][0])), len(str(self.dataRanges[key][1]))) #icona + maxCifre intere + eventuale segno
     
     def readTemperature(self, htu):
         t = htu.get_temp()

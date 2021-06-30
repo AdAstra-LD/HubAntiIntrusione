@@ -13,6 +13,7 @@ class ControlCenter():
         
         self.dataCenter = alarmDataCenter
         self.commCenter = alarmCommunicationCenter
+        self.commCenter.mqttClient.publish(str("roomIOT2021" + '/' + enableAlarmKey), str(self.enableAlarm), 2)
         self.dashboard = None #to be linked later
         
         self.lcd = lcd
@@ -27,15 +28,15 @@ class ControlCenter():
     def toggleOnOff(self):
         if self.enableAlarm: #se è inizialmente attivo
             self.ledRGB.memorizeColor(0, 0, 0)
-            self.ledRGB.RGBoff()
+            self.ledRGB.RGBset(0, 0, 0)
             self.stopAlarm()
             print("Sistema disabilitato") #viene disattivato
         else:
-            self.ledRGB.RGBset(0, 0, 1)
+            self.ledRGB.RGBset(0, 0, 255)
             print("Sistema abilitato")
         
         self.enableAlarm = not self.enableAlarm
-        self.commCenter.mqttClient.publish(str("roomIOT2021" + '/' + enableAlarmKey), self.enableAlarm, 2)
+        self.commCenter.mqttClient.publish(str("roomIOT2021" + '/' + enableAlarmKey), str(self.enableAlarm), 2)
         
         self.dashboard.displayStatus()
             
@@ -44,16 +45,15 @@ class ControlCenter():
         self.dashboard.continueFlag.clear()
         self.dataCenter.continueFlag.clear()
         self.commCenter.continueFlag.clear()
+        self.lcd.lock.acquire()
         if self.enableAlarm:
             self.alarmRunning = True
             print("Intrusione!!!")
-            self.ledRGB.flash(flashFrequency = 20, colorTuple = (1, 0, 0))
+            self.ledRGB.flash(flashFrequency = 20, colorTuple = (255, 0, 0))
             self.buzzer.play()
-            self.lcd.lock.acquire()
             self.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
         else:
             print("Movimento rilevato... ma l'allarme non e' inserito")
-            self.lcd.lock.acquire()
             self.lcd.printLine("Alarm busy...", 1, align = "CENTER")
         
         self.lcd.lock.release()

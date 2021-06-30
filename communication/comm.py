@@ -101,7 +101,7 @@ class CommCenter():
                     self.continueFlag.wait()
     
                     self.dataCenter.sensoreStorageLock.acquire()
-                    print("Sending data")
+                    #print("Sending data")
                     for key in self.dataCenter.sensorStorage:
                         nDecimals = self.dataCenter.decimalPos[key].get()
                         data = self.dataCenter.sensorStorage[key].get()
@@ -109,7 +109,7 @@ class CommCenter():
                         #print(shortString)
                         self.mqttClient.publish(str("roomIOT2021" + '/' + key), shortString, self.preferredQoS)
                     for key in self.dataCenter.sensorHistory:
-                        self.mqttClient.publish(str("roomIOT2021" + '/H' + key), self.dataCenter.sensorHistory[key], self.preferredQoS)
+                        self.mqttClient.publish(str("roomIOT2021" + '/H' + key), str(self.dataCenter.sensorHistory[key]), self.preferredQoS)
                     self.dataCenter.sensoreStorageLock.release()
                     sleep(period)
                 # }

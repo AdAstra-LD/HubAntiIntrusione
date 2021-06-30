@@ -83,7 +83,7 @@ ledRGB = led.RGBLed(D4, D22, D23)
 ledRGB.rainbowFade(duration = 500, times = 2)
 
 sleep(100)
-ledRGB.RGBset(R = 1, G = 1)
+ledRGB.RGBset(R = 255, G = 255)
 prefs = settings.UserSettings(glob.lcd, glob.pad, ledRGB)
 
 alarmDataCenter = dc.DataCenter(glob.htu21d, decimalTemperature = 2, decimalHumidity = 2, decimalLight = 1)
@@ -92,7 +92,8 @@ alarmControlCenter = cc.ControlCenter(alarmDataCenter, alarmCommunicationCenter,
 localDashboard = ui.LocalDashboard(alarmDataCenter, alarmControlCenter, glob.lcd)
 alarmControlCenter.dashboard = localDashboard
 
-ledRGB.RGBoff()
+ledRGB.linkCommCenter(alarmCommunicationCenter)
+ledRGB.RGBset(0, 0, 0)
 
 alarmDataCenter.startRetrieveData(5000)
 if runDashboardFlag:

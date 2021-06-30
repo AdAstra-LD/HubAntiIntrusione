@@ -2,22 +2,26 @@ import glob
 import utilities.cMath as cMath
 import threading
 
-colorPinDict = {
-    "r" : (0,),
-    "g" : (1,),
-    "b" : (2,),
+colorDict = {
+    "r" : (255, 0, 0),
+    "g" : (0, 255, 0),
+    "b" : (0, 0, 255),
     
-    "c" : (1, 2),
-    "m" : (2, 0),
-    "y" : (0, 1),
+    "c" : (0, 255, 255),
+    "m" : (255, 0, 255),
+    "y" : (255, 255, 0),
     
-    "w" : (0, 1, 2)
+    "w" : (255, 255, 255)
 }
 
 class RGBLed:
     def __init__(self, Rpin, Gpin, Bpin):
         self.cur = [0, 0, 0]
         self.mem = [0, 0, 0]
+        self.lock = threading.Lock()
+        
+        self.commCenter = None #da linkare in un secondo momento, per eventualmente abilitare la funzionalità di send
+        self.topicName = ""
         
         self.enable = True
         self.continueFlag = threading.Event()
@@ -29,23 +33,15 @@ class RGBLed:
         pinMode(Bpin, OUTPUT)
         
         self.pinTuple = (Rpin, Gpin, Bpin)
-        self.RGBoff()
+        self.RGBset(0, 0, 0)
         
         print("LEDs are set up: " + str(Rpin) + ", " + str(Gpin) + ", " + str(Bpin))
-        
-    def ledColorToPins(self, ledColor):
-        global colorPinDict
-        ledColorlow = ledColor.lower()
-        return [self.pinTuple[pos] for pos in colorPinDict[ledColorlow]]
     
-    def RGBoff(self):
-        digitalWrite(self.pinTuple[0], LOW)
-        digitalWrite(self.pinTuple[1], LOW)
-        digitalWrite(self.pinTuple[2], LOW)
-        
-        self.cur = [0, 0, 0]
+    def linkCommCenter(self, commCenter, topicName = "roomIOT2021/ledRGB"):
+        self.commCenter = commCenter
+        self.topicName = topicName
     
-    def RGBset(self, R = None, G = None, B = None, colorTuple = None): 
+    def RGBset(self, R = None, G = None, B = None, colorTuple = None, send = True): 
         if colorTuple == None:
             colorTuple = (R, G, B)
         
@@ -55,26 +51,30 @@ class RGBLed:
             if cMath.isNumber(color):
                 status = HIGH if(color > 0) else LOW
                 digitalWrite(self.pinTuple[cIndex], status)
-                self.cur[cIndex] = color
+                self.cur[cIndex] = min(color, 255)
+        
+        if send and self.commCenter is not None and self.topicName is not None and len(self.topicName) > 0:
+            self.commCenter.mqttClient.publish(self.topicName, str([c for c in self.cur]), 1)
     
     def rainbowFade(self, duration = 1000, times = 1):
         pauseTime = max(1, duration//6)
         self.memorizeCurrentColor()
         
         for x in range(times):
-            self.RGBset(R = 1, G = 0, B = 0)
+            self.RGBset(R = 255, G = 0, B = 0)
             sleep(pauseTime)
-            self.RGBset(R = 1, G = 1, B = 0)
+            self.RGBset(R = 255, G = 255, B = 0)
             sleep(pauseTime)
-            self.RGBset(R = 0, G = 1, B = 0)
+            self.RGBset(R = 0, G = 255, B = 0)
             sleep(pauseTime)
-            self.RGBset(R = 0, G = 1, B = 1)
+            self.RGBset(R = 0, G = 255, B = 255)
             sleep(pauseTime)
-            self.RGBset(R = 0, G = 0, B = 1)
+            self.RGBset(R = 0, G = 0, B = 255)
             sleep(pauseTime)
-            self.RGBset(R = 1, G = 0, B = 1)
+            self.RGBset(R = 255, G = 0, B = 255)
             sleep(pauseTime)
         
+        print("restoring color")
         self.restoreColor()
     
     def memorizeColor (self, R = None, G = None, B = None, colorTuple = None):
@@ -94,7 +94,7 @@ class RGBLed:
     def _flashTask(self, flashFrequency, R = None, G = None, B = None, colorTuple = None):
         self.running = True 
         self.memorizeCurrentColor()
-        self.RGBoff()
+        self.RGBset(0, 0, 0)
         #pinTuple = self.ledColorToPins(color)
         
         flashFrequency = max(1, flashFrequency)
@@ -103,13 +103,15 @@ class RGBLed:
         if colorTuple is None:
             colorTuple = (R, G, B)
         
+        self.commCenter.mqttClient.publish(self.topicName, str([c for c in colorTuple]), 1)
+        
         while self.enable:
             if not self.continueFlag.is_set():
                 self.restoreColor()
             self.continueFlag.wait()
-            self.RGBset(colorTuple = colorTuple)
+            self.RGBset(colorTuple = colorTuple, send = False)
             sleep(period)
-            self.RGBset(0, 0, 0)
+            self.RGBset(0, 0, 0, send = False)
             sleep(period)
         
         self.restoreColor()
@@ -128,13 +130,13 @@ class RGBLed:
         
     def quickBlink(self, R = None, G = None, B = None, colorTuple = None, flashFrequencyHz = 20, times = 3):
         self.memorizeCurrentColor()
-        self.RGBoff()
+        self.RGBset(0, 0, 0)
         period = max(1, 1000//flashFrequencyHz)
         
         for x in range(times):
             self.RGBset(R, G, B, colorTuple)
             sleep(period)
-            self.RGBoff()
+            self.RGBset(0, 0, 0)
             sleep(period)
         
         self.restoreColor()
