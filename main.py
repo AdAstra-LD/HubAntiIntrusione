@@ -21,6 +21,7 @@ import alarm.localDashboard as ui
 import alarm.settings as settings
 import glob
 
+from meas.htu21d import htu21d
 #pinPhotoresist = A2
 
 pinIR = D5
@@ -31,18 +32,21 @@ def initIO():
     streams.serial()
     
     glob.lcd = initLCD(I2C1)
-    
     glob.pad = keypad.KeyPad(invert = True)
+    glob.htu21d = htu21d.HTU21D(I2C0)
+    glob.htu21d.start()
+    sleep(200)
+    glob.htu21d.init()
+    sleep(300)
     
     print("Setting up input pins...")
     pinMode(pinIR, INPUT)
     #pinMode(pinPhotoresist, INPUT)
     
-    #pinMode(pinSettingsButton, INPUT_PULLDOWN)
     pinMode(pinEnButton, INPUT_PULLUP)
     print("Setup completed")
         
-def initLCD(port = I2C0):
+def initLCD(port = I2C1):
     lcdObj = lcdi2c.LCDI2C(port, nCols=16, nRows=2)
     if (port == None):
         return lcdObj
@@ -67,14 +71,14 @@ ledRGB = led.RGBLed(D4, D22, D23)
 ledRGB.quickBlink(R = 1, G = 1)
 
 sleep(750)
-settings.load()
+#settings.load()
 
-alarmDataCenter = dc.DataCenter(1, 1, 0)
+alarmDataCenter = dc.DataCenter(2, 2, 1)
 alarmControlCenter = cc.ControlCenter(glob.lcd, ledRGB, buzzer.Buzzer(D15.PWM), pinEnButton, pinIR)
-localDashboard = ui.LocalDashboard(alarmDataCenter, alarmControlCenter, glob.lcd)
+localDashboard = ui.LocalDashboard(alarmDataCenter, alarmControlCenter, glob.lcd, glob.htu21d)
 alarmControlCenter.dashboard = localDashboard
 
-localDashboard.show()
+localDashboard.show(5000)
 
 commCenter = comm.AlarmComm(alarmControlCenter, alarmDataCenter, "FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
-commCenter.dataSendLoop(alarmControlCenter.enable["mqttSend"], 1500)
+commCenter.dataSendLoop(alarmControlCenter.enable["mqttSend"], 6000)

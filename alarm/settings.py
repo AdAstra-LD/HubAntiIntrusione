@@ -3,6 +3,8 @@ import peripherals.specialChars as chars
 
 import memory.customflash as flash
 import memory.memorymap as memmap
+import utilities.cMath as cMath
+
 import glob
 
 SYSTEM_UNINITIALIZED = 0
@@ -68,7 +70,7 @@ def passwordScreen():
             posInPassword = glob.lcd.cursorPos[0] - inputStartPos
             curlen = len(password)
             
-            if glob.isNumber(val):
+            if cMath.isNumber(val):
                 print("pos in password: " + str(posInPassword) + "  pw len: " + str(len(password)))
                 if posInPassword < curlen: #Se posizione del cursore non è sull'ultimo char
                     password[posInPassword] = val #sostituzione

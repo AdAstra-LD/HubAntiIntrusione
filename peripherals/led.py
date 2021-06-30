@@ -1,4 +1,5 @@
 import glob
+import utilities.cMath as cMath
 import threading
 
 colorPinDict = {
@@ -50,7 +51,7 @@ class RGBLed:
         for cIndex in range(3):
             color = colorTuple[cIndex]
             
-            if glob.isNumber(color):
+            if cMath.isNumber(color):
                 status = HIGH if(color > 0) else LOW
                 digitalWrite(self.pinTuple[cIndex], status)
                 self.cur[cIndex] = color

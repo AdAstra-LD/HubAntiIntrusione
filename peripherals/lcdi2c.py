@@ -2,7 +2,7 @@ import i2c
 import streams
 import threading
 
-import glob
+import utilities.cString as cString
 
 # I2C byte:   [H ------------------------ L]
 #             [  bit dati  ] [bit controllo]
@@ -272,6 +272,7 @@ class LCDI2C():
 #----------------------------------------------------------#
 # FUNZIONI SCRITTURA --------------------------------------#
 #----------------------------------------------------------#
+    
     def writeCGRAM(self, charTuple, CGRAMslot=0):
         #Write a custom character to a chosen CGRAM slot
         
@@ -343,7 +344,7 @@ class LCDI2C():
         if self.i2cport is None:
             return
         
-        rowsToPrint = glob.splitSentence(text, self.nCols)
+        rowsToPrint = cString.splitSentence(text, self.nCols)
         numRowsToPrint = len(rowsToPrint)
         
         currentLine = ""

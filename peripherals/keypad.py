@@ -23,7 +23,7 @@ import timers
 lastChangeTime = 0
 keyPressed = 0
 
-PINSETUP_DEFAULT = (A2, A3, A0, A1, D27, D14, D12, D13)
+PINSETUP_DEFAULT = (D19, D18, A0, A1, D27, D14, D12, D13)
 
 NUM_ROWS = 4
 NO_BUTTON_PRESSED = -1
@@ -48,10 +48,10 @@ class KeyPad():
         for x in pinTuple:
             self._pins.append(x)
             
-            #I primi 4 contatti da sx, cioè da 7 a 4, sono rows -> OUTPUT 
+            #I primi 4 contatti da sx, cioè da 8 a 5, sono rows -> OUTPUT 
             # DEVONO AVERE ADC!!!!
             
-            #Gli ultimi 4 contatti, cioè da 3 a 0, sono cols -> INPUT_PULLDOWN
+            #Gli ultimi 4 contatti, cioè da 4 a 1, sono cols -> INPUT_PULLDOWN
             
             #O O O O  I I I I
             pinMode(self._pins[-1], INPUT_PULLDOWN) if (ctr > 3) else pinMode(self._pins[-1], OUTPUT)

@@ -1,5 +1,5 @@
 import threading
-import mutableObject as mo
+import utilities.mutableObject as mo
 
 #Alarm Keywords
 temperatureKey = 'temperature'
@@ -9,74 +9,10 @@ lightKey = 'light'
 #Peripherals
 lcd = None
 pad = None
+htu21d = None
 photoresistor = None
 
 #Utilities
-def isNumber(s):
-    if s == None:
-        return False
-        
-    try:
-        int(s)
-        return True
-    except ValueError:
-        return False
-
-def stringRpad(string, desiredLength, filler = " "):
-    strlen = len(string)
-    
-    if strlen < desiredLength:
-        string = string + (filler * (desiredLength-strlen))
-
-    return string
-
-def stringLpad(string, desiredLength, filler = " "):
-    strlen = len(string)
-    
-    if strlen < desiredLength:
-        string = (filler * (desiredLength-strlen)) + string
-
-    return string
-
-def stringCapitalize(string):
-    newStr = [c for c in string]
-        
-    newStr[0] = newStr[0].upper()
-    return ''.join(newStr)
-    
-def splitSentence(sentence, nCols): 
-    stringCopy = sentence
-    
-    stringList = []
-    posBackslash = 0
-    while (len(stringCopy) > 0 and posBackslash >= 0):
-        #__builtins__.print(str(stringCopy)) 
-        
-        posBackslash = stringCopy.find('\n')
-        
-        #__builtins__.print("Found backslash at " + str(posBackslash))
-        
-        if (posBackslash < 0):
-            for x in range (ceil(len(stringCopy) / nCols)):
-                stringList.append(stringCopy[:nCols].strip())
-                stringCopy = stringCopy[nCols:]
-        else:
-            stringList.append(stringCopy[:posBackslash].strip())
-            stringCopy = stringCopy[(posBackslash+1):]
-            
-        #__builtins__.print("Ho aggiunto la stringa " +  '"' + str(stringList[len(stringList)-1] + '"'))
-        
-    return stringList
-
-def ceil(n):
-    return -int((-n) // 1)
-
-def max(n1, n2):
-    if (n1 > n2):
-        return n1
-        
-    return n2
-
 
     #timePeriod: tempo che passa tra una chiamata di tutti i task iniziali e l'altra
     #runCondition: condizione che consente di iterare ed eseguire i task iniziali
@@ -95,20 +31,21 @@ def max(n1, n2):
     #sottrai(10, 8)
 
     #non appena "continuaAdOperare" è False, viene eseguita stampaRisultato()
-def timedRepeat(timePeriod, runCondition, eventWait, taskSequenceOnStart, startArgs = [[]], taskSequenceOnEnd = [], endArgs = [[]]):
-    
-    numStartTasks = len(taskSequenceOnStart)
-    
-    print("About to start a new process of " + str(numStartTasks) + " tasks...")
-    while runCondition.get() == True:
-        for x in range(numStartTasks):
-            eventWait.wait()
-            taskSequenceOnStart[x](*startArgs[x])
-            
-        sleep(timePeriod)
-    
-    #Una volta finito il loop...
-    numFinalTasks = len(taskSequenceOnEnd)
-    if (taskSequenceOnEnd is not None and numFinalTasks > 0):
-        for x in range(numFinalTasks):
-            taskSequenceOnEnd[x](*(endArgs[x]))
+####def timedRepeat(timePeriod, runCondition, eventWait, taskSequenceOnStart, startArgs = [[]], taskSequenceOnEnd = [], endArgs = [[]]):
+####    
+####    numStartTasks = len(taskSequenceOnStart)
+####    
+####    print("About to start a new process of " + str(numStartTasks) + " tasks...")
+####    while runCondition.get() == True:
+####        for x in range(numStartTasks):
+####            eventWait.wait()
+####            taskSequenceOnStart[x](*startArgs[x])
+####            
+####        sleep(timePeriod)
+####    
+####    #Una volta finito il loop...
+####    numFinalTasks = len(taskSequenceOnEnd)
+####    if (taskSequenceOnEnd is not None and numFinalTasks > 0):
+####        for x in range(numFinalTasks):
+####            taskSequenceOnEnd[x](*(endArgs[x]))
+####
