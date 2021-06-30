@@ -50,11 +50,11 @@ class CommCenter():
         self.running["wifi"] = True
         
         #try:
-        self.mqttclient = mqtt.Client("Test", clean_session = True)
+        self.mqttClient = mqtt.Client("Test", clean_session = True)
         for retry in range(attempts):
             try:
                 print("Attempting connection with MQTT broker...")
-                self.mqttclient.connect("192.168.1.67", port=1886, keepalive = 15)
+                self.mqttClient.connect("192.168.1.67", port=1886, keepalive = 15)
                 print("MQTT connection successful.")
                 break
             except Exception as e:
@@ -72,7 +72,7 @@ class CommCenter():
                     return
                 sleep(500)
         
-        self.mqttclient.set_will('roomIOT2021/#', str("Error"), 2, True)
+        self.mqttClient.set_will('roomIOT2021/#', str("Error"), 2, True)
         self.running["mqtt"] = True
         #except Exception as e:
         #    sleep(150)
@@ -85,7 +85,7 @@ class CommCenter():
             self.continueFlag.set()
         else:
             print("Starting MQTT data thread")
-            self.mqttclient.loop()
+            self.mqttClient.loop()
             
             if nonBlocking:
                 thread(self._sendAll, period)
@@ -107,9 +107,9 @@ class CommCenter():
                         data = self.dataCenter.sensorStorage[key].get()
                         shortString = str('%.*f') % (nDecimals, data)
                         #print(shortString)
-                        self.mqttclient.publish(str("roomIOT2021" + '/' + key), shortString, self.preferredQoS)
+                        self.mqttClient.publish(str("roomIOT2021" + '/' + key), shortString, self.preferredQoS)
                     for key in self.dataCenter.sensorHistory:
-                        self.mqttclient.publish(str("roomIOT2021" + '/H' + key), str(self.dataCenter.sensorHistory[key]), self.preferredQoS)
+                        self.mqttClient.publish(str("roomIOT2021" + '/H' + key), self.dataCenter.sensorHistory[key], self.preferredQoS)
                     self.dataCenter.sensoreStorageLock.release()
                     sleep(period)
                 # }
@@ -126,7 +126,7 @@ class CommCenter():
                     glob.lcd.clear()
                     glob.lcd.lock.release()
                     return
-                #self.mqttclient.reconnect()
+                #self.mqttClient.reconnect()
                 sleep(200)
     
         print("Stopping MQTT thread...")

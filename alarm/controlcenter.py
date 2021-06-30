@@ -2,6 +2,8 @@ import threading
 
 import utilities.mutableObject as mo
 import glob
+
+enableAlarmKey = "enableAlarm"
 #from smartsensors import digitalSensors as ds
 
 class ControlCenter():
@@ -33,6 +35,7 @@ class ControlCenter():
             print("Sistema abilitato")
         
         self.enableAlarm = not self.enableAlarm
+        self.commCenter.mqttClient.publish(str("roomIOT2021" + '/' + enableAlarmKey), self.enableAlarm, 2)
         
         self.dashboard.displayStatus()
             
