@@ -19,7 +19,6 @@ import alarm.controlcenter as cc
 import alarm.datacenter as dc
 import alarm.localDashboard as ui
 import alarm.settings as settings
-import glob
 
 from meas.htu21d import htu21d
 #pinPhotoresist = A2
@@ -31,33 +30,10 @@ htu21dconfig_attempts = 5
 runDashboardFlag = False
 
 import utilities.circularList as cl
+lcd = None
+pad = None
+htu = None
 
-def initIO():
-    global runDashboardFlag
-    streams.serial()
-    
-    glob.lcd = initLCD(I2C1)
-    glob.pad = keypad.KeyPad(invert = True)
-    
-    glob.htu21d = htu21d.HTU21D(I2C0)
-    for retry in range(5):
-        try:
-            glob.htu21d.start()
-            sleep(500)
-            glob.htu21d.init()
-            sleep(500)
-            runDashboardFlag = True
-            break
-        except Exception as e:
-            print(e)
-    
-    print("Setting up input pins...")
-    pinMode(pinIR, INPUT)
-    #pinMode(pinPhotoresist, INPUT)
-    
-    pinMode(pinEnButton, INPUT_PULLUP)
-    print("Setup completed")
-        
 def initLCD(port = I2C1):
     lcdObj = lcdi2c.LCDI2C(port, nCols=16, nRows=2)
     if (port == None):
@@ -75,28 +51,49 @@ def initLCD(port = I2C1):
     
     return lcdObj
 
-initIO()
+streams.serial()
+    
+lcd = initLCD(I2C1)
+lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
+pad = keypad.KeyPad(invert = True)
 
-glob.lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
+htu = htu21d.HTU21D(I2C0)
+for retry in range(5):
+    try:
+        htu.start()
+        sleep(500)
+        htu.init(res = 2) #non occorre precisione estrema
+        sleep(500)
+        runDashboardFlag = True
+        break
+    except Exception as e:
+        print(e)
+
+print("Setting up input pins...")
+pinMode(pinIR, INPUT)
+#pinMode(pinPhotoresist, INPUT)
+
+pinMode(pinEnButton, INPUT_PULLUP)
+print("Setup completed")
+
+
 
 ledRGB = led.RGBLed(D4, D22, D23)
 ledRGB.rainbowFade(duration = 500, times = 2)
 
 sleep(100)
 ledRGB.RGBset(R = 255, G = 255)
-prefs = settings.UserSettings(glob.lcd, glob.pad, ledRGB)
+prefs = settings.UserSettings(lcd, pad, ledRGB)
 
-alarmDataCenter = dc.DataCenter(glob.htu21d, decimalTemperature = 2, decimalHumidity = 2, decimalLight = 1)
-alarmCommunicationCenter = comm.CommCenter(alarmDataCenter, "FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
-alarmControlCenter = cc.ControlCenter(alarmDataCenter, alarmCommunicationCenter, glob.lcd, ledRGB, buzzer.Buzzer(D15.PWM), pinEnButton, pinIR)
-localDashboard = ui.LocalDashboard(alarmDataCenter, alarmControlCenter, glob.lcd)
+alarmCommunicationCenter = comm.CommCenter("FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
+alarmDataCenter = dc.DataCenter(alarmCommunicationCenter, htu, decimalTemperature = 2, decimalHumidity = 2, decimalLight = 1)
+alarmControlCenter = cc.ControlCenter(alarmDataCenter, alarmCommunicationCenter, lcd, ledRGB, buzzer.Buzzer(D15.PWM), pinEnButton, pinIR)
+localDashboard = ui.LocalDashboard(alarmDataCenter, alarmControlCenter, lcd)
 alarmControlCenter.dashboard = localDashboard
 
 ledRGB.linkCommCenter(alarmCommunicationCenter)
 ledRGB.RGBset(0, 0, 0)
 
-alarmDataCenter.startRetrieveData(5000)
+alarmDataCenter.startRetrieveData(3000)
 if runDashboardFlag:
-    localDashboard.show(5000)
-    
-alarmCommunicationCenter.dataSendLoop(5000, nonBlocking = False)#
+    localDashboard.show(3000)

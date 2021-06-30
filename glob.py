@@ -1,15 +1,9 @@
-import threading
-import utilities.mutableObject as mo
-
 #Alarm Keywords
 temperatureKey = 'temperature'
 humidityKey = 'humidity'
 lightKey = 'light'
 
 #Peripherals
-lcd = None
-pad = None
-htu21d = None
 photoresistor = None
 
 #Utilities

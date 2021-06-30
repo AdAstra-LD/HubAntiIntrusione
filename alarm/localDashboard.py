@@ -1,7 +1,6 @@
 import threading
 import glob
 import utilities.cString as cString
-import utilities.mutableObject as mo
 import peripherals.specialChars as chars
 
 class LocalDashboard():
@@ -16,9 +15,9 @@ class LocalDashboard():
         self.controlCenter = alarmControlCenter
         
         self.iconCharsLastWrittenPosition = { 
-            glob.temperatureKey : mo.Mutable((0, 1)),
-            glob.humidityKey : mo.Mutable((0, 1)),
-            glob.lightKey : mo.Mutable((0, 0))
+            glob.temperatureKey : (0, 1),
+            glob.humidityKey : (0, 1),
+            glob.lightKey : (0, 0)
         }
     
     def _dashboard_bodyrun(self, refreshTime):
@@ -27,9 +26,10 @@ class LocalDashboard():
             self.continueFlag.wait()
             
             self.dataCenter.sensoreStorageLock.acquire()
+            
             self.lcd.lock.acquire()
-            self.displayData(mo.Mutable((0, 0)), (0, 0), self.lcd.CGRAM[2], glob.lightKey, self.dataCenter.sensorStorage[glob.lightKey], "%")
-            self.displayData(mo.Mutable((0, 1)), (0, 0), self.lcd.CGRAM[0], glob.temperatureKey, self.dataCenter.sensorStorage[glob.temperatureKey], self.lcd.CGRAM[3])
+            self.displayData((0, 0), (0, 0), self.lcd.CGRAM[2], glob.lightKey, self.dataCenter.sensorStorage[glob.lightKey], "%")
+            self.displayData((0, 1), (0, 0), self.lcd.CGRAM[0], glob.temperatureKey, self.dataCenter.sensorStorage[glob.temperatureKey], self.lcd.CGRAM[3])
             self.displayData(self.iconCharsLastWrittenPosition[glob.temperatureKey], (1, 0), self.lcd.CGRAM[1], glob.humidityKey, self.dataCenter.sensorStorage[glob.humidityKey], "%")
             self.lcd.lock.release()
             
@@ -40,7 +40,7 @@ class LocalDashboard():
             
         print("Dashboard killed")
         
-    def show(self, refreshTime):
+    def show(self, refreshTime, nonBlocking = False):
         if self.running:
             print("Dashboard already running...")
             return
@@ -55,23 +55,24 @@ class LocalDashboard():
         self.lcd.clear()
         self.lcd.lock.release()
         
-        thread(self._dashboard_bodyrun, refreshTime)
-        print("Thread running...")
+        if nonBlocking:
+            thread(self._dashboard_bodyrun, refreshTime)
+            print("Dashboard running in separate thread")
+        else:
+            self._dashboard_bodyrun(refreshTime)
     
     def stopDashboard(self):
         print("Stopping dashboard")
-        self.taskManager["read" + cString.capitalize(glob.temperatureKey)].set(False)
-        self.taskManager["read" + cString.capitalize(glob.humidityKey)].set(False)
-        self.taskManager["read" + cString.capitalize(glob.lightKey)].set(False)
+        self.enable = False
         self.running = False
     
-    def displayData(self, xyReferenceMO, xyOffset, iconChar, key, dataMO, extraChar = "", dynamicPadding = False):
+    def displayData(self, xyReference, xyOffset, iconChar, key, data, extraChar = "", dynamicPadding = False):
         #NOT THREAD SAFE.
         #REMEMBER TO ACQUIRE LOCK ON LCD DISPLAY BEFORE CALLING this
         WHITESPACE_AMOUNT = 1
         
-        nDecimals = self.dataCenter.decimalPos[key].get()
-        shortString = (str('%.*f') % (nDecimals, dataMO.get()))
+        nDecimals = self.dataCenter.decimalPos[key]
+        shortString = (str('%.*f') % (nDecimals, data))
         shortString = shortString + extraChar
         
         #print("Calculating maxlength with " + str(key) + " as the key...")
@@ -81,15 +82,14 @@ class LocalDashboard():
             maxLength = maxLength + nDecimals + 1 #tenere in considerazione il char punto
         
         # {
-        xyReference = xyReferenceMO.get()
         self.lcd.printAtPos(cString.rpad(iconChar + shortString, maxLength+WHITESPACE_AMOUNT), xyReference[0]+xyOffset[0], xyReference[1]+xyOffset[1])
         cursorPos = self.lcd.getCursorPos()
         # }
         
         if dynamicPadding:
-            self.iconCharsLastWrittenPosition[key].set((cursorPos[0]-maxLength+len(shortString), cursorPos[1]))
+            self.iconCharsLastWrittenPosition[key] = (cursorPos[0]-maxLength+len(shortString), cursorPos[1])
         else:
-            self.iconCharsLastWrittenPosition[key].set((cursorPos[0]-WHITESPACE_AMOUNT, cursorPos[1]))
+            self.iconCharsLastWrittenPosition[key] = (cursorPos[0]-WHITESPACE_AMOUNT, cursorPos[1])
             
     def displayStatus(self):
         if not self.running:

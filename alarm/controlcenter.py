@@ -1,10 +1,7 @@
 import threading
-
-import utilities.mutableObject as mo
 import glob
 
 enableAlarmKey = "enableAlarm"
-#from smartsensors import digitalSensors as ds
 
 class ControlCenter():
     def __init__(self, alarmDataCenter, alarmCommunicationCenter, lcd, ledRGB, buzzer, enableButton, IRsensor):
@@ -44,7 +41,6 @@ class ControlCenter():
     def intrusione(self):
         self.dashboard.continueFlag.clear()
         self.dataCenter.continueFlag.clear()
-        self.commCenter.continueFlag.clear()
         self.lcd.lock.acquire()
         if self.enableAlarm:
             self.alarmRunning = True
@@ -70,4 +66,4 @@ class ControlCenter():
         
         self.dashboard.continueFlag.set()
         self.dataCenter.continueFlag.set()
-        self.commCenter.continueFlag.set()
+        self.alarmRunning = False
