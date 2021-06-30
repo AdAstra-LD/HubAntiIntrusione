@@ -5,20 +5,19 @@ class Buzzer:
     def __init__(self, pin):
         pinMode(pin, OUTPUT)
         self.pin = pin
+        self.enable = True
         self.continueFlag = threading.Event()
         self.continueFlag.set()
         self.running = False
     
-    def _body(self, enableConditionMO, initialFreq, finalFreq, increment, delay):
+    def _body(self, initialFreq, finalFreq, increment, delay):
         if initialFreq == 0 or initialFreq < finalFreq or delay == 0 or increment == 0:
             return
         
         self.running = True
-        
-        #enableConditionMO.set(True)
         currentFreq = initialFreq
         
-        while enableConditionMO.get():
+        while self.enable:
             if not self.continueFlag.is_set():
                 pwm.write(self.pin, 0, 0)
                 
@@ -43,12 +42,12 @@ class Buzzer:
         pwm.write(self.pin, 0, 0)
         self.running = False
     
-    def play(self, enableConditionMO, initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
-        enableConditionMO.set(True)
+    def play(self, initialFreq = 2350, finalFreq = 200, increment = -12, delay = 2):
+        self.enable = True
         
         if self.running:
             print("Resuming buzzer thread")
             self.continueFlag.set()
         else:
             print("Starting buzzer thread")
-            thread(self._body, enableConditionMO, initialFreq, finalFreq, increment, delay)
+            thread(self._body, initialFreq, finalFreq, increment, delay)

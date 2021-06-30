@@ -19,6 +19,7 @@ class RGBLed:
         self.cur = [0, 0, 0]
         self.mem = [0, 0, 0]
         
+        self.enable = True
         self.continueFlag = threading.Event()
         self.continueFlag.set()
         self.running = False
@@ -56,6 +57,26 @@ class RGBLed:
                 digitalWrite(self.pinTuple[cIndex], status)
                 self.cur[cIndex] = color
     
+    def rainbowFade(self, duration = 1000, times = 1):
+        pauseTime = max(1, duration//6)
+        self.memorizeCurrentColor()
+        
+        for x in range(times):
+            self.RGBset(R = 1, G = 0, B = 0)
+            sleep(pauseTime)
+            self.RGBset(R = 1, G = 1, B = 0)
+            sleep(pauseTime)
+            self.RGBset(R = 0, G = 1, B = 0)
+            sleep(pauseTime)
+            self.RGBset(R = 0, G = 1, B = 1)
+            sleep(pauseTime)
+            self.RGBset(R = 0, G = 0, B = 1)
+            sleep(pauseTime)
+            self.RGBset(R = 1, G = 0, B = 1)
+            sleep(pauseTime)
+        
+        self.restoreColor()
+    
     def memorizeColor (self, R = None, G = None, B = None, colorTuple = None):
         if colorTuple == None:
             colorTuple = (R, G, B)
@@ -70,9 +91,8 @@ class RGBLed:
     def restoreColor (self):
         self.RGBset(colorTuple = self.mem)
         
-    def _flashTask(self, enableConditionMO, flashFrequency, R = None, G = None, B = None, colorTuple = None):
+    def _flashTask(self, flashFrequency, R = None, G = None, B = None, colorTuple = None):
         self.running = True 
-        enableConditionMO.set(True)
         self.memorizeCurrentColor()
         self.RGBoff()
         #pinTuple = self.ledColorToPins(color)
@@ -83,7 +103,7 @@ class RGBLed:
         if colorTuple is None:
             colorTuple = (R, G, B)
         
-        while enableConditionMO.get():
+        while self.enable:
             if not self.continueFlag.is_set():
                 self.restoreColor()
             self.continueFlag.wait()
@@ -96,15 +116,15 @@ class RGBLed:
         self.running = False 
         print("Stopping LED thread")
             
-    def flash(self, enableConditionMO, flashFrequency = 20, R = None, G = None, B = None, colorTuple = None):
-        enableConditionMO.set(True)
+    def flash(self, flashFrequency = 20, R = None, G = None, B = None, colorTuple = None):
+        self.enable = True
         
         if self.running:
             print("Resuming LED thread")
             self.continueFlag.set()
         else:
             print("Starting LED thread")
-            thread(self._flashTask, enableConditionMO, flashFrequency, R, G, B, colorTuple)
+            thread(self._flashTask, flashFrequency, R, G, B, colorTuple)
         
     def quickBlink(self, R = None, G = None, B = None, colorTuple = None, flashFrequencyHz = 20, times = 3):
         self.memorizeCurrentColor()

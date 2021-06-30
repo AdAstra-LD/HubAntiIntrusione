@@ -4,7 +4,14 @@ import threading
 import glob
 
 class DataCenter():
-    def __init__(self, decimalTemperature = 0, decimalHumidity = 0, decimalLight = 0):
+    def __init__(self, htu21d, decimalTemperature = 0, decimalHumidity = 0, decimalLight = 0):
+        self.enableDataRetrieval = True
+        self.dataRetrievalRunning = False
+        self.continueFlag = threading.Event()
+        self.continueFlag.set()
+        
+        self.htu21d = htu21d
+        
         self.sensoreStorageLock = threading.Lock()
         self.sensorStorage = { 
             glob.temperatureKey : mo.Mutable(0.0),
@@ -23,6 +30,32 @@ class DataCenter():
             glob.humidityKey : mo.Mutable(decimalHumidity),
             glob.lightKey : mo.Mutable(decimalLight)
         }
+    
+    def startRetrieveData(self, refreshTime):
+        if self.dataRetrievalRunning:
+            print("Data retrieval already running...")
+            return
+        
+        print("Starting Data retrieval ...")
+        
+        thread(self._bodyRetrieveData, refreshTime)
+    
+    def _bodyRetrieveData(self, refreshTime):
+        self.dataRetrievalRunning = True
+        while self.enableDataRetrieval:
+            self.continueFlag.wait()
+            
+            self.sensoreStorageLock.acquire()
+            
+            self.dummy(0, 100)
+            self.readTemperature(self.htu21d)
+            self.readHumidity(self.htu21d)
+            
+            self.sensoreStorageLock.release()
+            sleep(refreshTime)
+            
+        print("DataRetrieval process killed")
+        
     
     def calculateMaxLength(self, key):
         return 1 + max(len(str(self.dataRanges[key][0])), len(str(self.dataRanges[key][1]))) #icona + maxCifre intere + eventuale segno

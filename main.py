@@ -27,17 +27,28 @@ from meas.htu21d import htu21d
 pinIR = D5
 pinEnButton = D21
 
+htu21dconfig_attempts = 5
+runDashboardFlag = False
+
 
 def initIO():
+    global runDashboardFlag
     streams.serial()
     
     glob.lcd = initLCD(I2C1)
     glob.pad = keypad.KeyPad(invert = True)
+    
     glob.htu21d = htu21d.HTU21D(I2C0)
-    glob.htu21d.start()
-    sleep(200)
-    glob.htu21d.init()
-    sleep(300)
+    for retry in range(5):
+        try:
+            glob.htu21d.start()
+            sleep(500)
+            glob.htu21d.init()
+            sleep(500)
+            runDashboardFlag = True
+            break
+        except Exception as e:
+            print(e)
     
     print("Setting up input pins...")
     pinMode(pinIR, INPUT)
@@ -68,17 +79,22 @@ initIO()
 glob.lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
 
 ledRGB = led.RGBLed(D4, D22, D23)
-ledRGB.quickBlink(R = 1, G = 1)
+ledRGB.rainbowFade(duration = 500, times = 2)
 
-sleep(750)
-#settings.load()
+sleep(100)
+ledRGB.RGBset(R = 1, G = 1)
+prefs = settings.UserSettings(glob.lcd, glob.pad, ledRGB)
 
-alarmDataCenter = dc.DataCenter(2, 2, 1)
-alarmControlCenter = cc.ControlCenter(glob.lcd, ledRGB, buzzer.Buzzer(D15.PWM), pinEnButton, pinIR)
-localDashboard = ui.LocalDashboard(alarmDataCenter, alarmControlCenter, glob.lcd, glob.htu21d)
+alarmDataCenter = dc.DataCenter(glob.htu21d, decimalTemperature = 2, decimalHumidity = 2, decimalLight = 1)
+alarmCommunicationCenter = comm.CommCenter(alarmDataCenter, "FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
+alarmControlCenter = cc.ControlCenter(alarmDataCenter, alarmCommunicationCenter, glob.lcd, ledRGB, buzzer.Buzzer(D15.PWM), pinEnButton, pinIR)
+localDashboard = ui.LocalDashboard(alarmDataCenter, alarmControlCenter, glob.lcd)
 alarmControlCenter.dashboard = localDashboard
 
-localDashboard.show(5000)
+ledRGB.RGBoff()
 
-commCenter = comm.AlarmComm(alarmControlCenter, alarmDataCenter, "FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
-commCenter.dataSendLoop(alarmControlCenter.enable["mqttSend"], 6000)
+alarmDataCenter.startRetrieveData(5000)
+if runDashboardFlag:
+    localDashboard.show(5000)
+    
+alarmCommunicationCenter.dataSendLoop(5000, nonBlocking = False)#

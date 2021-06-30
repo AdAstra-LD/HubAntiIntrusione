@@ -5,13 +5,13 @@ import utilities.mutableObject as mo
 import peripherals.specialChars as chars
 
 class LocalDashboard():
-    def __init__(self, alarmDataCenter, alarmControlCenter, lcd, htu21d):
+    def __init__(self, alarmDataCenter, alarmControlCenter, lcd):
+        self.enable = True
         self.running = False
         self.continueFlag = threading.Event()
         self.continueFlag.set()
         
         self.lcd = lcd
-        self.htu21d = htu21d
         self.dataCenter = alarmDataCenter
         self.controlCenter = alarmControlCenter
         
@@ -23,15 +23,10 @@ class LocalDashboard():
     
     def _dashboard_bodyrun(self, refreshTime):
         self.running = True
-        while (self.controlCenter.enable["dashboard"].get()):
+        while self.enable:
             self.continueFlag.wait()
             
             self.dataCenter.sensoreStorageLock.acquire()
-            
-            self.dataCenter.dummy(0, 100)
-            self.dataCenter.readTemperature(self.htu21d)
-            self.dataCenter.readHumidity(self.htu21d)
-            
             self.lcd.lock.acquire()
             self.displayData(mo.Mutable((0, 0)), (0, 0), self.lcd.CGRAM[2], glob.lightKey, self.dataCenter.sensorStorage[glob.lightKey], "%")
             self.displayData(mo.Mutable((0, 1)), (0, 0), self.lcd.CGRAM[0], glob.temperatureKey, self.dataCenter.sensorStorage[glob.temperatureKey], self.lcd.CGRAM[3])
@@ -106,17 +101,17 @@ class LocalDashboard():
         
         string = ""
         
-        if self.controlCenter.enable["alarm"].get():
+        if self.controlCenter.enableAlarm:
             string += self.lcd.CGRAM[4]  #EXCLAMATION
             
         string += self.lcd.CGRAM[6]
         
-        if self.controlCenter.running["mqtt"].get():
+        if self.controlCenter.commCenter.running["mqtt"]:
             string += self.lcd.CGRAM[7] #MQTT Logo
         
         self.lcd.lock.acquire()
         self.lcd.writeCGRAM(chars.MQTT, 7) #this acts as a temp buffer
-        if self.controlCenter.running["wifi"].get() == True:
+        if self.controlCenter.commCenter.running["wifi"]:
             self.lcd.writeCGRAM(chars.WIFI, 6)
         else:
             self.lcd.writeCGRAM(chars.NO_SIGNAL, 6) 

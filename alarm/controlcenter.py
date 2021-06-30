@@ -5,25 +5,13 @@ import glob
 #from smartsensors import digitalSensors as ds
 
 class ControlCenter():
-    def __init__(self, lcd, ledRGB, buzzer, enableButton, IRsensor):
-        self.enable = { 
-            #Global Vars for the alarm
-            "dashboard" : mo.Mutable(True),
-            "audio" : mo.Mutable(True),
-            "flash" : mo.Mutable(True),
-            "alarm" : mo.Mutable(False),
-            "mqttSend" : mo.Mutable(False),
-        }
+    def __init__(self, alarmDataCenter, alarmCommunicationCenter, lcd, ledRGB, buzzer, enableButton, IRsensor):
+        self.enableAlarm = False
+        self.alarmRunning = False
         
-        self.running = { 
-            #Global Vars for system processes
-            "wifi" : mo.Mutable(False),
-            "mqtt" : mo.Mutable(False),
-            "alarm" : mo.Mutable(False),
-            "mqttSend" : mo.Mutable(False),
-        }
-        
-        self.dashboard = None
+        self.dataCenter = alarmDataCenter
+        self.commCenter = alarmCommunicationCenter
+        self.dashboard = None #to be linked later
         
         self.lcd = lcd
         self.ledRGB = ledRGB
@@ -35,9 +23,7 @@ class ControlCenter():
         onPinFall(IRsensor, self.stopAlarm, debounce = 500)
 
     def toggleOnOff(self):
-        isAlarmOn = self.enable["alarm"].get()
-        
-        if isAlarmOn: #se è inizialmente attivo
+        if self.enableAlarm: #se è inizialmente attivo
             self.ledRGB.memorizeColor(0, 0, 0)
             self.ledRGB.RGBoff()
             self.stopAlarm()
@@ -46,18 +32,20 @@ class ControlCenter():
             self.ledRGB.RGBset(0, 0, 1)
             print("Sistema abilitato")
         
-        self.enable["alarm"].set(not isAlarmOn)
+        self.enableAlarm = not self.enableAlarm
         
         self.dashboard.displayStatus()
             
         
     def intrusione(self):
         self.dashboard.continueFlag.clear()
-        if (self.enable["alarm"].get() == True):
-            self.running["alarm"].set(True)
+        self.dataCenter.continueFlag.clear()
+        self.commCenter.continueFlag.clear()
+        if self.enableAlarm:
+            self.alarmRunning = True
             print("Intrusione!!!")
-            self.ledRGB.flash(self.enable["flash"], flashFrequency = 20, colorTuple = (1, 0, 0))
-            #self.buzzer.play(self.enable["audio"])
+            self.ledRGB.flash(flashFrequency = 20, colorTuple = (1, 0, 0))
+            self.buzzer.play()
             self.lcd.lock.acquire()
             self.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
         else:
@@ -69,7 +57,7 @@ class ControlCenter():
         print("lock released")
     
     def stopAlarm(self):
-        if self.running["alarm"].get():
+        if self.alarmRunning:
             self.buzzer.continueFlag.clear()
             self.ledRGB.continueFlag.clear()
             self.lcd.lock.acquire()
@@ -78,4 +66,5 @@ class ControlCenter():
             print("Alarm signal down...")
         
         self.dashboard.continueFlag.set()
-        self.dashboard.displayStatus()
+        self.dataCenter.continueFlag.set()
+        self.commCenter.continueFlag.set()

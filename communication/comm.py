@@ -10,13 +10,20 @@ import glob
 
 wifi_driver.auto_init()
 
-class AlarmComm():
-    def __init__(self, alarmControlCenter, alarmDataCenter, networkName, password, attempts = 5, preferredQoS = 1):
-        self.controlCenter = alarmControlCenter
+class CommCenter():
+    def __init__(self, alarmDataCenter, networkName, password, attempts = 5, preferredQoS = 1):
         self.dataCenter = alarmDataCenter
+        
         self.continueFlag = threading.Event()
         self.continueFlag.set()
-        self.sending = False
+        
+        self.enableMQTTsend = True
+        self.running = { 
+            #Global Vars for system processes
+            "wifi" : False,
+            "mqtt" : False,
+            "mqttSend" : False,
+        }
         
         self.preferredQoS = preferredQoS
         
@@ -37,11 +44,10 @@ class AlarmComm():
                     sleep(4000)
                     glob.lcd.clear()
                     glob.lcd.lock.release()
-                    self.controlCenter.dashboard.displayStatus()
                     return
                 sleep(500)
         
-        self.controlCenter.running["wifi"].set(True)
+        self.running["wifi"] = True
         
         #try:
         self.mqttclient = mqtt.Client("Test", clean_session = True)
@@ -63,34 +69,35 @@ class AlarmComm():
                     sleep(4000)
                     glob.lcd.clear()
                     glob.lcd.lock.release()
-                    self.controlCenter.dashboard.displayStatus()
                     return
                 sleep(500)
         
         self.mqttclient.set_will('roomIOT2021/#', str("Error"), 2, True)
-        self.controlCenter.running["mqtt"].set(True)
-        self.controlCenter.dashboard.displayStatus()
+        self.running["mqtt"] = True
         #except Exception as e:
         #    sleep(150)
     
-    def dataSendLoop(self, enableConditionMO, period):
-        enableConditionMO.set(True)
+    def dataSendLoop(self, period, nonBlocking = False):
+        self.enableMQTTsend = True
         
-        if self.sending:
+        if self.running["mqttSend"]:
             print("Resuming MQTT data thread")
             self.continueFlag.set()
         else:
             print("Starting MQTT data thread")
             self.mqttclient.loop()
-            #thread(self._sendAll, enableConditionMO, period)
-            self._sendAll(enableConditionMO, period)
+            
+            if nonBlocking:
+                thread(self._sendAll, period)
+            else:
+                self._sendAll(period)
         
         
-    def _sendAll(self, enableConditionMO, period, errorLimit = 5):
-        self.sending = True
+    def _sendAll(self, period, errorLimit = 5):
+        self.running["mqttSend"] = True
         for retry in range(errorLimit):
             try: 
-                while enableConditionMO.get(): # {
+                while self.enableMQTTsend: # {
                     self.continueFlag.wait()
     
                     self.dataCenter.sensoreStorageLock.acquire()
@@ -116,10 +123,9 @@ class AlarmComm():
                     sleep(2000)
                     glob.lcd.clear()
                     glob.lcd.lock.release()
-                    self.controlCenter.dashboard.displayStatus()
                     return
                 #self.mqttclient.reconnect()
                 sleep(200)
     
         print("Stopping MQTT thread...")
-        self.sending = False
+        self.running["mqttSend"] = False
