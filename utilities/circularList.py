@@ -7,10 +7,10 @@ class CircularNumericList():
         elemStr = str(elem)
         posDot = elemStr.find('.')
         
-        if posDot == -1 or len(elemStr) - posDot - 1 <= self.nDecimals:
+        if posDot == -1 or len(elemStr) - posDot - 1 <= nDecimals:
             self.container.append(elemStr)
         else:
-            self.container.append(str('%.*f') % (self.nDecimals, elem))
+            self.container.append(str('%.*f') % (nDecimals, elem))
                 
         self.container = self.container[-self.size:]
     

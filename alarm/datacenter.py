@@ -71,13 +71,13 @@ class DataCenter():
     def readTemperature(self, htu):
         t = htu.get_temp()
         self.sensorStorage[glob.temperatureKey].set(t)
-        self.sensorHistory[glob.temperatureKey].add(t, self.decimalPos[glob.temperatureKey])
+        self.sensorHistory[glob.temperatureKey].add(t, self.decimalPos[glob.temperatureKey].get())
         return t# Read raw temperature
     
     def readHumidity(self, htu):
         h = htu.get_humid()
         self.sensorStorage[glob.humidityKey].set(h)
-        self.sensorHistory[glob.humidityKey].add(h, self.decimalPos[glob.humidityKey])
+        self.sensorHistory[glob.humidityKey].add(h, self.decimalPos[glob.humidityKey].get())
         return h # Read raw temperature
     
     def readLight(self, pinSensor, invert = False):
@@ -95,5 +95,5 @@ class DataCenter():
         val = random(lowerLimit, upperLimit*17)
         val = val/17
         self.sensorStorage[glob.lightKey].set(val)
-        self.sensorHistory[glob.lightKey].add(val, self.decimalPos[glob.lightKey])
+        self.sensorHistory[glob.lightKey].add(val, self.decimalPos[glob.lightKey].get())
         return self.sensorStorage[glob.lightKey].get()
