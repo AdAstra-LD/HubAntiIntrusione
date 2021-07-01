@@ -11,7 +11,6 @@ class ControlCenter():
         self.dataCenter = alarmDataCenter
         self.commCenter = alarmCommunicationCenter
         self.commCenter.mqttClient.publish(str("roomIOT2021" + '/' + enableAlarmKey), str(self.enableAlarm), 2)
-        self.dashboard = None #to be linked later
         
         self.lcd = lcd
         self.ledRGB = ledRGB
@@ -35,11 +34,10 @@ class ControlCenter():
         self.enableAlarm = not self.enableAlarm
         self.commCenter.mqttClient.publish(str("roomIOT2021" + '/' + enableAlarmKey), str(self.enableAlarm), 2)
         
-        self.dashboard.displayStatus()
+        self.dataCenter.displayStatus()
             
         
     def intrusione(self):
-        self.dashboard.continueFlag.clear()
         self.dataCenter.continueFlag.clear()
         self.lcd.lock.acquire()
         if self.enableAlarm:
@@ -64,6 +62,5 @@ class ControlCenter():
             self.lcd.lock.release()
             print("Alarm signal down...")
         
-        self.dashboard.continueFlag.set()
         self.dataCenter.continueFlag.set()
         self.alarmRunning = False

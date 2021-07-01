@@ -17,14 +17,15 @@ import communication.comm as comm
 
 import alarm.controlcenter as cc
 import alarm.datacenter as dc
-import alarm.localDashboard as ui
 import alarm.settings as settings
 
-from meas.htu21d import htu21d
-#pinPhotoresist = A2
+import peripherals.htu21d as htu21d
+
 
 pinIR = D5
 pinEnButton = D21
+pinEnButton = D21
+pinPhotoresistor = A2
 
 htu21dconfig_attempts = 5
 runDashboardFlag = False
@@ -57,12 +58,12 @@ lcd = initLCD(I2C1)
 lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
 pad = keypad.KeyPad(invert = True)
 
-htu = htu21d.HTU21D(I2C0)
+htu = htu21d.HTU21D(I2C0, clk = 150000)
 for retry in range(5):
     try:
         htu.start()
         sleep(500)
-        htu.init(res = 2) #non occorre precisione estrema
+        htu.init(res = 0)
         sleep(500)
         runDashboardFlag = True
         break
@@ -71,12 +72,10 @@ for retry in range(5):
 
 print("Setting up input pins...")
 pinMode(pinIR, INPUT)
-#pinMode(pinPhotoresist, INPUT)
+pinMode(pinPhotoresistor, INPUT)
 
 pinMode(pinEnButton, INPUT_PULLUP)
 print("Setup completed")
-
-
 
 ledRGB = led.RGBLed(D4, D22, D23)
 ledRGB.rainbowFade(duration = 500, times = 2)
@@ -86,14 +85,10 @@ ledRGB.RGBset(R = 255, G = 255)
 prefs = settings.UserSettings(lcd, pad, ledRGB)
 
 alarmCommunicationCenter = comm.CommCenter("FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
-alarmDataCenter = dc.DataCenter(alarmCommunicationCenter, htu, decimalTemperature = 2, decimalHumidity = 2, decimalLight = 1)
+alarmDataCenter = dc.DataCenter(alarmCommunicationCenter, htu, pinPhotoresistor, lcd, decimalTemperature = 2, decimalHumidity = 2, decimalLight = 1)
 alarmControlCenter = cc.ControlCenter(alarmDataCenter, alarmCommunicationCenter, lcd, ledRGB, buzzer.Buzzer(D15.PWM), pinEnButton, pinIR)
-localDashboard = ui.LocalDashboard(alarmDataCenter, alarmControlCenter, lcd)
-alarmControlCenter.dashboard = localDashboard
 
 ledRGB.linkCommCenter(alarmCommunicationCenter)
 ledRGB.RGBset(0, 0, 0)
 
-alarmDataCenter.startRetrieveData(3000)
-if runDashboardFlag:
-    localDashboard.show(3000)
+alarmDataCenter.startRetrieveData(1500)
