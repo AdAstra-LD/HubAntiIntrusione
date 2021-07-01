@@ -97,6 +97,6 @@ buzz.sendStatus()
 
 #Controllare SEMPRE che le virgole qui siano a posto
 
-buzz.playSequence(music.sequenceStart, BPM = 240)
+buzz.playSequence(music.sequenceStartTone, BPM = 240)
 
 alarmDataCenter.startRetrieveData(1500)#

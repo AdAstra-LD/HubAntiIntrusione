@@ -207,7 +207,7 @@ class LCDI2C():
         #makes backlight flash a given number of times with the specified delay
         for x in range(2*times):
             self.toggleBacklight()
-            sleep(times)
+            sleep(delay)
         
 #----------------------------------------------------------#
 # FUNZIONI CURSORE ----------------------------------------#

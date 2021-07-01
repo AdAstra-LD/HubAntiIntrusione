@@ -28,7 +28,7 @@ class Buzzer:
     
     def playTone(self, fixedfrequency, duration = 50,  duty = 50):
         duty = min(duty, 100)
-        period=max(1, 1000000//fixedfrequency)
+        period=max(20, 1000000//fixedfrequency)
             
         self.lock.acquire()
         
@@ -42,7 +42,7 @@ class Buzzer:
 
         duty = min(duty, 100)
         freq = music.notes[note]*cMath.exp(2, octaveModifier)
-        period=max(1, round(1000000//freq))
+        period=max(20, round(1000000//freq))
             
         self.lock.acquire()
         
@@ -68,7 +68,7 @@ class Buzzer:
             else:
                 freq = music.notes[x[0]]*cMath.exp(2, x[1])
                 #print(str(freq))
-                period=max(1, round(1000000//freq))
+                period=max(20, round(1000000//freq))
                 #print(str(period))
                 pwm.write(self.pin, period, (period*duty)//100, MICROS)
                 sleep(max(1, round(1000*60*4*x[2]/BPM) ))

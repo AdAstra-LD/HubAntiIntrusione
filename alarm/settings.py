@@ -35,6 +35,7 @@ class UserSettings():
         
         self.lcd.writeCGRAM(chars.SMILEY_FACE, 7) #Temp buffer --> #SmileyFace
         self.lcd.printLine("Welcome! " + self.lcd.CGRAM[7], delay = 20, align = "C")
+        self.buzzer.playSequence(music.welcomeTone, BPM = 265)
         sleep(1500)
         
         self.lcd.printLine("There are a few\nthings to set up")
@@ -66,6 +67,7 @@ class UserSettings():
             self.lcd.returnHome()
             self.lcd.print("  PW: ")
             self.lcd.cursorConfig(True, True, True) #Imposta il cursore lampeggiante
+            self.lcd.flashDisplay(2, 70)
         
             inputStartPos = self.lcd.cursorPos[0]    #Memorizza la posizione iniziale di inserimento
             val = ''                            #BUFFER ultimo tasto premuto
@@ -112,6 +114,7 @@ class UserSettings():
                 
                 if (val == '1'):
                     self.lcd.printLine("Confirmed.")
+                    self.buzzer.playSequence(music.successTone, BPM = 210, duty = 50)
                     sleep(1000)
                     
                     selectionConfirmed = True
@@ -126,6 +129,7 @@ class UserSettings():
                 
                 if (val == '1'):
                     self.lcd.printLine("Pword confirmed.")
+                    self.buzzer.playSequence(music.successTone, BPM = 210, duty = 50)
                     sleep(1000)
                     
                     selectionConfirmed = True
