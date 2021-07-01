@@ -6,11 +6,11 @@ import utilities.cString as cString
 import peripherals.specialChars as chars
 
 class DataCenter():
-    def __init__(self, alarmCommunicationCenter, htu21d, pinPhotoresistor, lcd, decimalTemperature = 0, decimalHumidity = 0, decimalLight = 0):
-        self.commCenter = alarmCommunicationCenter
+    def __init__(self, mqttClient, htu21d, pinPhotoresistor, lcd, decimalTemperature = 0, decimalHumidity = 0, decimalLight = 0):
+        self.mqttClient = mqttClient
         
         self.enableDataRetrieval = True
-        self.enableDataSend = True
+        self.enableDataSend = False
         self.enableDataShow = True
         
         self.dataRetrievalRunning = False
@@ -53,14 +53,17 @@ class DataCenter():
             glob.lightKey : (0, 0)
         }
     
-    def startRetrieveData(self, refreshTime):
+    def startRetrieveData(self, refreshTime, nonBlocking = False):
         if self.dataRetrievalRunning:
             print("Data retrieval already running...")
             return
         
         print("Starting Data retrieval ...")
         
-        thread(self._bodyRetrieveData, refreshTime)
+        if nonBlocking:
+            thread(self._bodyRetrieveData, refreshTime)
+        else:
+            self._bodyRetrieveData(refreshTime)
     
     def _bodyRetrieveData(self, refreshTime):
         self.dataRetrievalRunning = True
@@ -95,13 +98,13 @@ class DataCenter():
             
             if self.enableDataSend:
                 try:
-                    self.commCenter.mqttClient.publish(str("roomIOT2021" + '/' + glob.temperatureKey), str(t), 1) 
-                    self.commCenter.mqttClient.publish(str("roomIOT2021" + '/' + glob.humidityKey), str(h), 1)
-                    self.commCenter.mqttClient.publish(str("roomIOT2021" + '/' + glob.lightKey), str(l), 1) 
+                    self.mqttClient.publish(str("roomIOT2021" + '/' + glob.temperatureKey), str(t), 1) 
+                    self.mqttClient.publish(str("roomIOT2021" + '/' + glob.humidityKey), str(h), 1)
+                    self.mqttClient.publish(str("roomIOT2021" + '/' + glob.lightKey), str(l), 1) 
                     
-                    self.commCenter.mqttClient.publish(str("roomIOT2021" + '/H' + glob.temperatureKey), str(self.sensorHistory[glob.temperatureKey]), 1) 
-                    self.commCenter.mqttClient.publish(str("roomIOT2021" + '/H' + glob.humidityKey), str(self.sensorHistory[glob.humidityKey]), 1) 
-                    self.commCenter.mqttClient.publish(str("roomIOT2021" + '/H' + glob.lightKey), str(self.sensorHistory[glob.lightKey]), 1) 
+                    self.mqttClient.publish(str("roomIOT2021" + '/H' + glob.temperatureKey), str(self.sensorHistory[glob.temperatureKey]), 1) 
+                    self.mqttClient.publish(str("roomIOT2021" + '/H' + glob.humidityKey), str(self.sensorHistory[glob.humidityKey]), 1) 
+                    self.mqttClient.publish(str("roomIOT2021" + '/H' + glob.lightKey), str(self.sensorHistory[glob.lightKey]), 1) 
                 except Exception as e:
                     print("Error" + str(e))
                     sleep(100)
@@ -112,13 +115,12 @@ class DataCenter():
                 self.displayData((0, 1), (0, 0), self.lcd.CGRAM[0], glob.temperatureKey, self.sensorStorage[glob.temperatureKey], self.lcd.CGRAM[3])
                 self.displayData(self.iconCharsLastWrittenPosition[glob.temperatureKey], (1, 0), self.lcd.CGRAM[1], glob.humidityKey, self.sensorStorage[glob.humidityKey], "%")
                 self.lcd.lock.release()
-                self.displayStatus()
      
             sleep(refreshTime)
             
         print("DataRetrieval process killed")
         
-    def displayData(self, xyReference, xyOffset, iconChar, key, data, extraChar = "", dynamicPadding = False):
+    def displayData(self, xyReference, xyOffset, iconChar, key, data, extraChar = ""):
         #NOT THREAD SAFE.
         #REMEMBER TO ACQUIRE LOCK ON LCD DISPLAY BEFORE CALLING this
         WHITESPACE_AMOUNT = 1
@@ -140,26 +142,7 @@ class DataCenter():
         
         self.iconCharsLastWrittenPosition[key] = (cursorPos[0]-WHITESPACE_AMOUNT, cursorPos[1])
     
-    def displayStatus(self):
-        string = ""
-        
-        #if self.controlCenter.enableAlarm:
-        #    string += self.lcd.CGRAM[4]  #EXCLAMATION
-        
-        if self.commCenter.running["mqtt"]:
-            string += self.lcd.CGRAM[7] #MQTT Logo
-        
-        string += self.lcd.CGRAM[6]
-        
-        self.lcd.lock.acquire()
-        self.lcd.writeCGRAM(chars.MQTT, 7) #this acts as a temp buffer
-        if self.commCenter.running["wifi"]:
-            self.lcd.writeCGRAM(chars.WIFI, 6)
-        else:
-            self.lcd.writeCGRAM(chars.NO_SIGNAL, 6) 
-        
-        self.lcd.print(cString.lpad(string, 8), row = 0, align='RIGHT', delay = 0)
-        self.lcd.lock.release()
+    
     
     def readLight(self, invert = False):
         valore = adc.read(self.photoresistor)

@@ -4,18 +4,20 @@ import peripherals.specialChars as chars
 import memory.customflash as flash
 import memory.memorymap as memmap
 import utilities.cMath as cMath
+import utilities.music as music
 
 SYSTEM_UNINITIALIZED = 0
 SYSTEM_UNPROTECTED = 1
 SYSTEM_PROTECTED = 2
 
 class UserSettings():
-    def __init__(self, lcd, keypad, ledRGB, pwMaxLen = 8):
+    def __init__(self, lcd, keypad, ledRGB, buzz, pwMaxLen = 8):
         self.PASSWORD_MAXLEN = min(8, pwMaxLen)
         self.flash_size = memmap.USER_PASSWORD_OFFSET + self.PASSWORD_MAXLEN
         self.lcd = lcd
         self.keypad = keypad
         self.ledRGB = ledRGB
+        self.buzzer = buzz
         self.flashMem = flash.FlashFileStream(memmap.ESP32_BASEADDR, self.flash_size)
         
         print(str(self.flashMem[memmap.SETUP_INFO_OFFSET]))
@@ -83,6 +85,7 @@ class UserSettings():
                         self.lcd.print(val)
                     else:
                         self.ledRGB.quickBlink(R=1)
+                        self.buzzer.playSequence(music.waitTone, BPM = 240)
                 elif val == 'B':
                     if posInPassword > 0:
                         self.lcd.shift(-1)

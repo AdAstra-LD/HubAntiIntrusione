@@ -13,14 +13,13 @@ import peripherals.buzzer as buzzer
 import peripherals.specialChars as chars
 import peripherals.keypad as keypad
 
-import communication.comm as comm
-
 import alarm.controlcenter as cc
 import alarm.datacenter as dc
 import alarm.settings as settings
 
 import peripherals.htu21d as htu21d
-
+import utilities.music as music
+from mqtt import mqtt
 
 pinIR = D5
 pinEnButton = D21
@@ -28,7 +27,6 @@ pinEnButton = D21
 pinPhotoresistor = A2
 
 htu21dconfig_attempts = 5
-runDashboardFlag = False
 
 import utilities.circularList as cl
 lcd = None
@@ -51,9 +49,14 @@ def initLCD(port = I2C1):
     #lcdObj.writeCGRAM(chars.LOCKED, 7) #this acts as a temp buffer
     
     return lcdObj
+    
 
 streams.serial()
-    
+
+ledRGB = led.RGBLed(D4, D22, D23)
+buzz = buzzer.Buzzer(D15.PWM)
+buzz.playSequence(music.waitTone, BPM = 240)
+
 lcd = initLCD(I2C1)
 lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
 pad = keypad.KeyPad(invert = True)
@@ -65,7 +68,6 @@ for retry in range(5):
         sleep(500)
         htu.init(res = 0)
         sleep(500)
-        runDashboardFlag = True
         break
     except Exception as e:
         print(e)
@@ -77,18 +79,24 @@ pinMode(pinPhotoresistor, INPUT)
 pinMode(pinEnButton, INPUT_PULLUP)
 print("Setup completed")
 
-ledRGB = led.RGBLed(D4, D22, D23)
 ledRGB.rainbowFade(duration = 500, times = 2)
 
 sleep(100)
 ledRGB.RGBset(R = 255, G = 255)
-prefs = settings.UserSettings(lcd, pad, ledRGB)
+prefs = settings.UserSettings(lcd, pad, ledRGB, buzz)
 
-alarmCommunicationCenter = comm.CommCenter("FASTWEB-RML2.4", "marcheselaiso@2020 2.4")
-alarmDataCenter = dc.DataCenter(alarmCommunicationCenter, htu, pinPhotoresistor, lcd, decimalTemperature = 2, decimalHumidity = 2, decimalLight = 1)
-alarmControlCenter = cc.ControlCenter(alarmDataCenter, alarmCommunicationCenter, lcd, ledRGB, buzzer.Buzzer(D15.PWM), pinEnButton, pinIR)
-
-ledRGB.linkCommCenter(alarmCommunicationCenter)
+mqttClient = mqtt.Client("ESP32_IOT_GL", clean_session = True)
+alarmDataCenter = dc.DataCenter(mqttClient, htu, pinPhotoresistor, lcd, decimalTemperature = 2, decimalHumidity = 2, decimalLight = 1)
+alarmControlCenter = cc.ControlCenter(alarmDataCenter, mqttClient, lcd, ledRGB, buzz, pinEnButton, pinIR)
+alarmControlCenter.startComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4", "broker.mqtt-dashboard.com", port = 1883, attempts = 5)
+alarmControlCenter.displayStatus()
+ledRGB.linkMQTTClient(mqttClient)
 ledRGB.RGBset(0, 0, 0)
+buzz.linkMQTTClient(mqttClient)
+buzz.sendStatus()
 
-alarmDataCenter.startRetrieveData(1500)
+#Controllare SEMPRE che le virgole qui siano a posto
+
+buzz.playSequence(music.sequenceStart, BPM = 240)
+
+alarmDataCenter.startRetrieveData(1500)#

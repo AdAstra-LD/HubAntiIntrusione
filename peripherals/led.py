@@ -20,7 +20,7 @@ class RGBLed:
         self.mem = [0, 0, 0]
         self.lock = threading.Lock()
         
-        self.commCenter = None #da linkare in un secondo momento, per eventualmente abilitare la funzionalità di send
+        self.mqttClient = None #da linkare in un secondo momento, per eventualmente abilitare la funzionalità di send
         self.topicName = ""
         
         self.enable = True
@@ -37,8 +37,8 @@ class RGBLed:
         
         print("LEDs are set up: " + str(Rpin) + ", " + str(Gpin) + ", " + str(Bpin))
     
-    def linkCommCenter(self, commCenter, topicName = "roomIOT2021/ledRGB"):
-        self.commCenter = commCenter
+    def linkMQTTClient(self, mqttClient, topicName = "roomIOT2021/ledRGB"):
+        self.mqttClient = mqttClient
         self.topicName = topicName
     
     def RGBset(self, R = None, G = None, B = None, colorTuple = None, send = True): 
@@ -53,8 +53,8 @@ class RGBLed:
                 digitalWrite(self.pinTuple[cIndex], status)
                 self.cur[cIndex] = min(color, 255)
         
-        if send and self.commCenter is not None and self.topicName is not None and len(self.topicName) > 0:
-            self.commCenter.mqttClient.publish(self.topicName, str([c for c in self.cur]), 1)
+        if send and self.mqttClient is not None and self.topicName is not None and len(self.topicName) > 0:
+            self.mqttClient.publish(self.topicName, str([c for c in self.cur]), 1)
     
     def rainbowFade(self, duration = 1000, times = 1):
         pauseTime = max(1, duration//6)
@@ -103,7 +103,7 @@ class RGBLed:
         if colorTuple is None:
             colorTuple = (R, G, B)
         
-        self.commCenter.mqttClient.publish(self.topicName, str([c for c in colorTuple]), 1)
+        self.mqttClient.publish(self.topicName, str([c for c in colorTuple]), 1)
         
         while self.enable:
             if not self.continueFlag.is_set():
