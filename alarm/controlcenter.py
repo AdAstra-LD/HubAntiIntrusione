@@ -1,10 +1,10 @@
 import threading
 import glob
 
-# import wifi support
 from wireless import wifi
 from mqtt import mqtt
 
+# import wifi support
 from espressif.esp32net import esp32wifi as wifi_driver
 import peripherals.specialChars as chars
 import utilities.cString as cString
@@ -15,6 +15,7 @@ enableAlarmKey = "enableAlarm"
 
 class ControlCenter():
     def __init__(self, alarmDataCenter, mqttClient, lcd, ledRGB, buzzer, enableButton, IRsensor):
+        self.intrudersCount = 0
         self.enableAlarm = False
         self.alarmRunning = False
         self.wifiOK = False
@@ -83,7 +84,9 @@ class ControlCenter():
         self.MQTTOk = True
         
         self.dataCenter.enableDataSend = True
-        self.mqttClient.publish(str("roomIOT2021" + '/' + enableAlarmKey), str(self.enableAlarm), 2)
+        self.mqttClient.publish(str("roomIOT2021" + '/' + enableAlarmKey), str(self.enableAlarm), 2, retain = True)
+        self.mqttClient.publish(str("roomIOT2021" + '/' + 'intruder'), "No activity", 2)
+        self.mqttClient.publish(str("roomIOT2021" + '/' + 'intrudersCount'), str(self.intrudersCount), 2, retain = True)
 
     def toggleOnOff(self):
         if self.enableAlarm: #se è inizialmente attivo
@@ -98,7 +101,7 @@ class ControlCenter():
         self.enableAlarm = not self.enableAlarm
         
         if self.mqttClient is not None:
-            self.mqttClient.publish(str("roomIOT2021" + '/' + enableAlarmKey), str(self.enableAlarm), 2)
+            self.mqttClient.publish(str("roomIOT2021" + '/' + enableAlarmKey), str(self.enableAlarm), 2, retain = True)
         
         self.displayStatus()
             
@@ -109,6 +112,9 @@ class ControlCenter():
         if self.enableAlarm:
             self.alarmRunning = True
             print("Intrusione!!!")
+            self.intrudersCount += 1
+            self.mqttClient.publish(str("roomIOT2021" + '/' + 'intrudersCount'), str(self.intrudersCount), 2, retain = True)
+            self.mqttClient.publish(str("roomIOT2021" + '/' + 'intruder'), "Intruder!", 2, retain = True)
             self.buzzer.soundAlarm()
             self.ledRGB.flash(flashFrequency = 20, colorTuple = (255, 0, 0))
             self.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
@@ -126,6 +132,7 @@ class ControlCenter():
             self.lcd.lock.acquire()
             self.lcd.clear()
             self.lcd.lock.release()
+            self.mqttClient.publish(str("roomIOT2021" + '/' + 'intruder'), "No activity", 2)
             print("Alarm signal down...")
         
         self.dataCenter.continueFlag.set()
