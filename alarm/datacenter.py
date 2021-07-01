@@ -98,13 +98,13 @@ class DataCenter():
             
             if self.enableDataSend:
                 try:
-                    self.mqttClient.publish(str("roomIOT2021" + '/' + glob.temperatureKey), str(t), 1) 
-                    self.mqttClient.publish(str("roomIOT2021" + '/' + glob.humidityKey), str(h), 1)
-                    self.mqttClient.publish(str("roomIOT2021" + '/' + glob.lightKey), str(l), 1) 
+                    self.mqttClient.publish(str(glob.topicRoot + '/' + glob.temperatureKey), str(t), 1) 
+                    self.mqttClient.publish(str(glob.topicRoot + '/' + glob.humidityKey), str(h), 1)
+                    self.mqttClient.publish(str(glob.topicRoot + '/' + glob.lightKey), str(l), 1) 
                     
-                    self.mqttClient.publish(str("roomIOT2021" + '/H' + glob.temperatureKey), str(self.sensorHistory[glob.temperatureKey]), 1) 
-                    self.mqttClient.publish(str("roomIOT2021" + '/H' + glob.humidityKey), str(self.sensorHistory[glob.humidityKey]), 1) 
-                    self.mqttClient.publish(str("roomIOT2021" + '/H' + glob.lightKey), str(self.sensorHistory[glob.lightKey]), 1) 
+                    self.mqttClient.publish(str(glob.topicRoot + '/H' + glob.temperatureKey), str(self.sensorHistory[glob.temperatureKey]), 1) 
+                    self.mqttClient.publish(str(glob.topicRoot + '/H' + glob.humidityKey), str(self.sensorHistory[glob.humidityKey]), 1) 
+                    self.mqttClient.publish(str(glob.topicRoot + '/H' + glob.lightKey), str(self.sensorHistory[glob.lightKey]), 1) 
                 except Exception as e:
                     print("Error" + str(e))
                     sleep(100)

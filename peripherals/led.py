@@ -37,7 +37,7 @@ class RGBLed:
         
         print("LEDs are set up: " + str(Rpin) + ", " + str(Gpin) + ", " + str(Bpin))
     
-    def linkMQTTClient(self, mqttClient, topicName = "roomIOT2021/ledRGB"):
+    def linkMQTTClient(self, mqttClient, topicName):
         self.mqttClient = mqttClient
         self.topicName = topicName
     

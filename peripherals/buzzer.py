@@ -18,7 +18,7 @@ class Buzzer:
         self.continueFlag = threading.Event()
         self.continueFlag.set()
     
-    def linkMQTTClient(self, mqttClient, topicName = "roomIOT2021/buzzer"):
+    def linkMQTTClient(self, mqttClient, topicName):
         self.mqttClient = mqttClient
         self.topicName = topicName
     

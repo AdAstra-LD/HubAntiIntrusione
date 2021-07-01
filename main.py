@@ -7,6 +7,7 @@ import threading
 import pwm
 import i2c
 
+import glob
 import peripherals.LCDI2C as lcdi2c
 import peripherals.led as led
 import peripherals.buzzer as buzzer
@@ -94,9 +95,9 @@ alarmControlCenter.startComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4", "broker
 lcd.clear()
 
 alarmControlCenter.displayStatus()
-ledRGB.linkMQTTClient(mqttClient)
+ledRGB.linkMQTTClient(mqttClient, glob.topicRoot + 'ledRGB')
 ledRGB.RGBset(0, 0, 0)
-buzz.linkMQTTClient(mqttClient)
+buzz.linkMQTTClient(mqttClient, glob.topicRoot + 'buzzer')
 buzz.sendStatus()
 
 buzz.playSequence(music.sequenceStartTone, BPM = 240)
