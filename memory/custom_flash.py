@@ -72,7 +72,7 @@ The FlashFileStream class
 
     def __len__(self):
         return self.size
-
+        
     def write(self,buf):
         """
 .. method:: write(buf)
@@ -128,7 +128,10 @@ The FlashFileStream class
 #------------------------------------------------------------------#
 #---------------------- E X T E N S I O N S -----------------------#
 #------------------------------------------------------------------#
-
+    
+    def __str__(self):
+        return self.bb
+        
     def read_smallint(self):
         """
 .. method:: read_smallint()
@@ -163,9 +166,12 @@ The FlashFileStream class
         
         """
         listbytes = []
+        #print("size:" + str(self.size))
+        #print("curpos:" + str(self.curpos))
         for x in range(min(count, self.size-self.curpos)):
+            #print("appending: " + str(self.bb[self.curpos]))
             listbytes.append(self.bb[self.curpos])
-            self.curpos += 16
+            self.curpos += 1
             
         return listbytes
         

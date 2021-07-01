@@ -30,9 +30,9 @@ class DataCenter():
         }
         
         self.sensorHistory = { 
-            glob.temperatureKey : cList.CircularNumericList(),
-            glob.humidityKey : cList.CircularNumericList(),
-            glob.lightKey : cList.CircularNumericList()
+            glob.temperatureKey : cList.CircularList(),
+            glob.humidityKey : cList.CircularList(),
+            glob.lightKey : cList.CircularList()
         }
         
         self.dataRanges = { 
@@ -73,7 +73,7 @@ class DataCenter():
             print("Reading t")
             for retry in range(5):
                 try:
-                    t = round(self.htu21d.get_temp(), self.decimalPos[glob.temperatureKey])
+                    t = str('%.*f') % (self.decimalPos[glob.temperatureKey], self.htu21d.get_temp())
                     break
                 except InvalidHardwareStatusError as ihs:
                     print(ihs)
@@ -81,7 +81,7 @@ class DataCenter():
             print("Reading h")
             for retry in range(5):
                 try:
-                    h = round(self.htu21d.get_humid(), self.decimalPos[glob.humidityKey])
+                    h = str('%.*f') % (self.decimalPos[glob.humidityKey], self.htu21d.get_humid())
                     break
                 except InvalidHardwareStatusError as ihs:
                     print(ihs)
@@ -111,23 +111,21 @@ class DataCenter():
             
             if self.enableDataShow:
                 self.lcd.lock.acquire()
-                self.displayData((0, 0), (0, 0), self.lcd.CGRAM[2], glob.lightKey, self.sensorStorage[glob.lightKey], "%")
-                self.displayData((0, 1), (0, 0), self.lcd.CGRAM[0], glob.temperatureKey, self.sensorStorage[glob.temperatureKey], self.lcd.CGRAM[3])
-                self.displayData(self.iconCharsLastWrittenPosition[glob.temperatureKey], (1, 0), self.lcd.CGRAM[1], glob.humidityKey, self.sensorStorage[glob.humidityKey], "%")
+                self.displayData((0, 0), (0, 0), self.lcd.CGRAM[2], glob.lightKey, self.sensorStorage[glob.lightKey] + "%")
+                self.displayData((0, 1), (0, 0), self.lcd.CGRAM[0], glob.temperatureKey, self.sensorStorage[glob.temperatureKey] + self.lcd.CGRAM[3])
+                self.displayData(self.iconCharsLastWrittenPosition[glob.temperatureKey], (1, 0), self.lcd.CGRAM[1], glob.humidityKey, self.sensorStorage[glob.humidityKey] + "%")
                 self.lcd.lock.release()
      
             sleep(refreshTime)
             
         print("DataRetrieval process killed")
         
-    def displayData(self, xyReference, xyOffset, iconChar, key, data, extraChar = ""):
+    def displayData(self, xyReference, xyOffset, iconChar, key, data):
         #NOT THREAD SAFE.
         #REMEMBER TO ACQUIRE LOCK ON LCD DISPLAY BEFORE CALLING this
         WHITESPACE_AMOUNT = 1
         
         nDecimals = self.decimalPos[key]
-        shortString = (str('%.*f') % (nDecimals, data))
-        shortString = shortString + extraChar
         
         #print("Calculating maxlength with " + str(key) + " as the key...")
         
@@ -136,7 +134,7 @@ class DataCenter():
             maxLength = maxLength + nDecimals + 1 #tenere in considerazione il char punto
         
         # {
-        self.lcd.printAtPos(cString.rpad(iconChar + shortString, maxLength+WHITESPACE_AMOUNT), xyReference[0]+xyOffset[0], xyReference[1]+xyOffset[1])
+        self.lcd.printAtPos(cString.rpad(iconChar + str(data), maxLength+WHITESPACE_AMOUNT), xyReference[0]+xyOffset[0], xyReference[1]+xyOffset[1])
         cursorPos = self.lcd.getCursorPos()
         # }
         
@@ -149,8 +147,8 @@ class DataCenter():
         
         if invert:
             valore = 4095 - valore
-        
-        percentage = round(100*valore/4095, self.decimalPos[glob.lightKey])
+            
+        percentage = str('%.*f') % (self.decimalPos[glob.lightKey], 100*valore/4095)
         return percentage
         
     #def dummyVal(self, key, lowerLimit, upperLimit):

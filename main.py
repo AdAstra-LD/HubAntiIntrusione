@@ -84,11 +84,11 @@ print("Setup completed")
 sleep(100)
 ledRGB.RGBset(R = 255, G = 255)
 prefs = settings.UserSettings(lcd, pad, ledRGB, buzz)
-prefs.userSetup()
+#prefs.passwordScreen(toCompare = [0, 2, 3], discardable = True)
 
 mqttClient = mqtt.Client("ESP32_IOT_GL", clean_session = True)
 alarmDataCenter = dc.DataCenter(htu, pinPhotoresistor, lcd, decimalTemperature = 2, decimalHumidity = 2, decimalLight = 1)
-alarmControlCenter = cc.ControlCenter(alarmDataCenter, lcd, ledRGB, buzz, pinEnButton, pinIR)
+alarmControlCenter = cc.ControlCenter(prefs, alarmDataCenter, lcd, ledRGB, buzz, pinEnButton, pinIR)
 alarmControlCenter.linkAndStartComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4", mqttClient, "broker.mqtt-dashboard.com", port = 1883, attempts = 5)
 
 if alarmControlCenter.wifiOk and alarmControlCenter.MQTTOk:
