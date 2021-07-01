@@ -60,6 +60,7 @@ buzz.playSequence(music.waitTone, BPM = 240)
     
 lcd = initLCD(I2C1)
 lcd.printLine("UniSa - IOT 2021\nLaiso, Macaro", align = "C")
+ledRGB.rainbowFade(duration = 500, times = 2)
 pad = keypad.KeyPad(invert = True)
 
 htu = htu21d.HTU21D(I2C0, clk = 150000)
@@ -79,8 +80,6 @@ pinMode(pinPhotoresistor, INPUT)
 
 pinMode(pinEnButton, INPUT_PULLUP)
 print("Setup completed")
-
-ledRGB.rainbowFade(duration = 500, times = 2)
 
 sleep(100)
 ledRGB.RGBset(R = 255, G = 255)

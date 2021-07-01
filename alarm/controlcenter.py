@@ -157,7 +157,7 @@ class ControlCenter():
         #print("lcd lock released")
     
     def checkBusy(self):
-        if digitalRead(self.IRsensor) == HIGH and self.enableAlarm == False:
+        if digitalRead(self.IRsensor) == HIGH:
             self.sensorBusy = True
             self.dataCenter.continueFlag.clear()
             self.lcd.lock.acquire()
@@ -169,6 +169,10 @@ class ControlCenter():
             self.lcd.lock.release()
         else:
             self.sensorBusy = False
+            
+            if self.mqttClient is not None:
+                self.mqttClient.publish(str(glob.topicRoot + '/' + intruderKey), "No activity", 2)
+            
             self.dataCenter.continueFlag.set()
             self.displayStatus()
     
@@ -179,10 +183,6 @@ class ControlCenter():
             self.lcd.lock.acquire()
             self.lcd.clear()
             self.lcd.lock.release()
-            
-            if self.mqttClient is not None:
-                self.mqttClient.publish(str(glob.topicRoot + '/' + intruderKey), "No activity", 2)
-                
             print("Alarm signal down...")
         
         self.checkBusy()
