@@ -12,6 +12,8 @@ import utilities.cString as cString
 wifi_driver.auto_init()
 
 enableAlarmKey = "enableAlarm"
+intruderKey = 'intruder'
+intrudersCountKey = 'intrudersCount'
 
 class ControlCenter():
     def __init__(self, alarmDataCenter, mqttClient, lcd, ledRGB, buzzer, enableButton, IRsensor):
@@ -85,8 +87,8 @@ class ControlCenter():
         
         self.dataCenter.enableDataSend = True
         self.mqttClient.publish(str(glob.topicRoot + '/' + enableAlarmKey), str(self.enableAlarm), 2, retain = True)
-        self.mqttClient.publish(str(glob.topicRoot + '/' + 'intruder'), "No activity", 2)
-        self.mqttClient.publish(str(glob.topicRoot + '/' + 'intrudersCount'), str(self.intrudersCount), 2, retain = True)
+        self.mqttClient.publish(str(glob.topicRoot + '/' + intruderKey), "No activity", 2)
+        self.mqttClient.publish(str(glob.topicRoot + '/' + intrudersCountKey), str(self.intrudersCount), 2, retain = True)
 
     def toggleOnOff(self):
         if self.enableAlarm: #se è inizialmente attivo
@@ -113,8 +115,8 @@ class ControlCenter():
             self.alarmRunning = True
             print("Intrusione!!!")
             self.intrudersCount += 1
-            self.mqttClient.publish(str(glob.topicRoot + '/' + 'intrudersCount'), str(self.intrudersCount), 2, retain = True)
-            self.mqttClient.publish(str(glob.topicRoot + '/' + 'intruder'), "Intruder!", 2, retain = True)
+            self.mqttClient.publish(str(glob.topicRoot + '/' + intrudersCountKey), str(self.intrudersCount), 2, retain = True)
+            self.mqttClient.publish(str(glob.topicRoot + '/' + intruderKey), "Intruder!", 2, retain = True)
             self.buzzer.soundAlarm()
             self.ledRGB.flash(flashFrequency = 20, colorTuple = (255, 0, 0))
             self.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
@@ -132,7 +134,7 @@ class ControlCenter():
             self.lcd.lock.acquire()
             self.lcd.clear()
             self.lcd.lock.release()
-            self.mqttClient.publish(str(glob.topicRoot + '/' + 'intruder'), "No activity", 2)
+            self.mqttClient.publish(str(glob.topicRoot + '/' + intruderKey), "No activity", 2)
             print("Alarm signal down...")
         
         self.dataCenter.continueFlag.set()

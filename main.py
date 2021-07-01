@@ -95,9 +95,9 @@ alarmControlCenter.startComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4", "broker
 lcd.clear()
 
 alarmControlCenter.displayStatus()
-ledRGB.linkMQTTClient(mqttClient, glob.topicRoot + 'ledRGB')
+ledRGB.linkMQTTClient(mqttClient, glob.topicRoot + '/' + 'ledRGB')
 ledRGB.RGBset(0, 0, 0)
-buzz.linkMQTTClient(mqttClient, glob.topicRoot + 'buzzer')
+buzz.linkMQTTClient(mqttClient, glob.topicRoot + '/' + 'buzzer')
 buzz.sendStatus()
 
 buzz.playSequence(music.sequenceStartTone, BPM = 240)
