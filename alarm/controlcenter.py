@@ -1,10 +1,10 @@
 import threading
 import glob
 
+# import wifi support
 from wireless import wifi
 from mqtt import mqtt
 
-# import wifi support
 from espressif.esp32net import esp32wifi as wifi_driver
 import peripherals.specialChars as chars
 import utilities.cString as cString

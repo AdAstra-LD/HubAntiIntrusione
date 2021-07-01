@@ -1,7 +1,7 @@
 import peripherals.keypad as pad
 import peripherals.specialChars as chars
 
-import memory.customflash as flash
+import memory.custom_flash as flash
 import memory.memorymap as memmap
 import utilities.cMath as cMath
 import utilities.music as music
@@ -86,7 +86,7 @@ class UserSettings():
                         password.append(val)
                         self.lcd.print(val)
                     else:
-                        self.ledRGB.quickBlink(R=1)
+                        self.ledRGB.quickBlink(R=255)
                         self.buzzer.playSequence(music.waitTone, BPM = 240)
                 elif val == 'B':
                     if posInPassword > 0:
@@ -113,9 +113,11 @@ class UserSettings():
                 val = self.keypad.scan(('1', '0'))
                 
                 if (val == '1'):
+                    self.ledRGB.RGBset(0, 255, 0)
                     self.lcd.printLine("Confirmed.")
                     self.buzzer.playSequence(music.successTone, BPM = 210, duty = 50)
-                    sleep(1000)
+                    self.ledRGB.quickBlink(G=255)
+                    sleep(400)
                     
                     selectionConfirmed = True
                     return password
@@ -128,9 +130,11 @@ class UserSettings():
                 val = self.keypad.scan(('1', '0'))
                 
                 if (val == '1'):
+                    self.ledRGB.RGBset(0, 255, 0)
                     self.lcd.printLine("Pword confirmed.")
                     self.buzzer.playSequence(music.successTone, BPM = 210, duty = 50)
-                    sleep(1000)
+                    self.ledRGB.quickBlink(G=255)
+                    sleep(400)
                     
                     selectionConfirmed = True
                     return password

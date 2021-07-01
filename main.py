@@ -84,18 +84,20 @@ ledRGB.rainbowFade(duration = 500, times = 2)
 sleep(100)
 ledRGB.RGBset(R = 255, G = 255)
 prefs = settings.UserSettings(lcd, pad, ledRGB, buzz)
+#prefs.userSetup()
 
 mqttClient = mqtt.Client("ESP32_IOT_GL", clean_session = True)
 alarmDataCenter = dc.DataCenter(mqttClient, htu, pinPhotoresistor, lcd, decimalTemperature = 2, decimalHumidity = 2, decimalLight = 1)
 alarmControlCenter = cc.ControlCenter(alarmDataCenter, mqttClient, lcd, ledRGB, buzz, pinEnButton, pinIR)
 alarmControlCenter.startComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4", "broker.mqtt-dashboard.com", port = 1883, attempts = 5)
+
+lcd.clear()
+
 alarmControlCenter.displayStatus()
 ledRGB.linkMQTTClient(mqttClient)
 ledRGB.RGBset(0, 0, 0)
 buzz.linkMQTTClient(mqttClient)
 buzz.sendStatus()
-
-#Controllare SEMPRE che le virgole qui siano a posto
 
 buzz.playSequence(music.sequenceStartTone, BPM = 240)
 

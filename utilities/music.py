@@ -1,3 +1,6 @@
+
+#Controllare SEMPRE che le virgole qui siano a posto
+
 notes = {
     "C" : 261.63,
         
@@ -27,6 +30,8 @@ notes = {
         
     "B" : 493.88
 }
+
+#Anche e soprattutto qui
 
 sequenceStartTone = [
         ("B", 0, 1/16), ("P", 1/16), 
