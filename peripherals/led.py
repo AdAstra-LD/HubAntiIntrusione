@@ -103,7 +103,9 @@ class RGBLed:
         if colorTuple is None:
             colorTuple = (R, G, B)
         
-        self.mqttClient.publish(self.topicName, str([c for c in colorTuple]), 1)
+        print(str([c for c in colorTuple]))
+        if self.mqttClient is not None:
+            self.mqttClient.publish(self.topicName, str([c for c in colorTuple]), 1)
         
         while self.enable:
             if not self.continueFlag.is_set():

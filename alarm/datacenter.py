@@ -6,8 +6,8 @@ import utilities.cString as cString
 import peripherals.specialChars as chars
 
 class DataCenter():
-    def __init__(self, mqttClient, htu21d, pinPhotoresistor, lcd, decimalTemperature = 0, decimalHumidity = 0, decimalLight = 0):
-        self.mqttClient = mqttClient
+    def __init__(self, htu21d, pinPhotoresistor, lcd, decimalTemperature = 0, decimalHumidity = 0, decimalLight = 0):
+        self.mqttClient = None
         
         self.enableDataRetrieval = True
         self.enableDataSend = False
@@ -96,7 +96,7 @@ class DataCenter():
             self.sensorHistory[glob.humidityKey].add(h)
             self.sensorHistory[glob.lightKey].add(l)
             
-            if self.enableDataSend:
+            if self.enableDataSend and self.mqttClient is not None:
                 try:
                     self.mqttClient.publish(str(glob.topicRoot + '/' + glob.temperatureKey), str(t), 1) 
                     self.mqttClient.publish(str(glob.topicRoot + '/' + glob.humidityKey), str(h), 1)

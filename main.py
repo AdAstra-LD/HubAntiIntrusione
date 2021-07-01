@@ -57,9 +57,9 @@ streams.serial()
 ledRGB = led.RGBLed(D4, D22, D23)
 buzz = buzzer.Buzzer(D15.PWM)
 buzz.playSequence(music.waitTone, BPM = 240)
-
+    
 lcd = initLCD(I2C1)
-lcd.printLine("Unisa - IOT 2021\nLaiso, Macaro", align = "C")
+lcd.printLine("UniSa - IOT 2021\nLaiso, Macaro", align = "C")
 pad = keypad.KeyPad(invert = True)
 
 htu = htu21d.HTU21D(I2C0, clk = 150000)
@@ -85,21 +85,28 @@ ledRGB.rainbowFade(duration = 500, times = 2)
 sleep(100)
 ledRGB.RGBset(R = 255, G = 255)
 prefs = settings.UserSettings(lcd, pad, ledRGB, buzz)
-#prefs.userSetup()
+prefs.userSetup()
 
 mqttClient = mqtt.Client("ESP32_IOT_GL", clean_session = True)
-alarmDataCenter = dc.DataCenter(mqttClient, htu, pinPhotoresistor, lcd, decimalTemperature = 2, decimalHumidity = 2, decimalLight = 1)
-alarmControlCenter = cc.ControlCenter(alarmDataCenter, mqttClient, lcd, ledRGB, buzz, pinEnButton, pinIR)
-alarmControlCenter.startComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4", "broker.mqtt-dashboard.com", port = 1883, attempts = 5)
+alarmDataCenter = dc.DataCenter(htu, pinPhotoresistor, lcd, decimalTemperature = 2, decimalHumidity = 2, decimalLight = 1)
+alarmControlCenter = cc.ControlCenter(alarmDataCenter, lcd, ledRGB, buzz, pinEnButton, pinIR)
+alarmControlCenter.linkAndStartComm("FASTWEB-RML2.4", "marcheselaiso@2020 2.4", mqttClient, "broker.mqtt-dashboard.com", port = 1883, attempts = 5)
 
-lcd.clear()
-
-alarmControlCenter.displayStatus()
-ledRGB.linkMQTTClient(mqttClient, glob.topicRoot + '/' + 'ledRGB')
+if alarmControlCenter.wifiOk and alarmControlCenter.MQTTOk:
+    alarmDataCenter.mqttClient = mqttClient
+    alarmControlCenter.mqttClient = mqttClient
+    ledRGB.linkMQTTClient(mqttClient, glob.topicRoot + '/' + 'ledRGB')
+    buzz.linkMQTTClient(mqttClient, glob.topicRoot + '/' + 'buzzer')
+    
+    
 ledRGB.RGBset(0, 0, 0)
-buzz.linkMQTTClient(mqttClient, glob.topicRoot + '/' + 'buzzer')
 buzz.sendStatus()
 
+lcd.printLine("Remember to wait\n30 - 45 seconds\nbefore using the\ninfrared sensor.", sentenceDelay = 1500, align = "L")
+sleep(1000)
+lcd.clear()
+alarmControlCenter.checkBusy()
 buzz.playSequence(music.sequenceStartTone, BPM = 240)
 
+alarmControlCenter.displayStatus()
 alarmDataCenter.startRetrieveData(1500)#

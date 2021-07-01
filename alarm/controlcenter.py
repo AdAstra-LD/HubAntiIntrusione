@@ -8,6 +8,7 @@ from mqtt import mqtt
 from espressif.esp32net import esp32wifi as wifi_driver
 import peripherals.specialChars as chars
 import utilities.cString as cString
+import utilities.music as music
 
 wifi_driver.auto_init()
 
@@ -16,14 +17,18 @@ intruderKey = 'intruder'
 intrudersCountKey = 'intrudersCount'
 
 class ControlCenter():
-    def __init__(self, alarmDataCenter, mqttClient, lcd, ledRGB, buzzer, enableButton, IRsensor):
+    def __init__(self, alarmDataCenter, lcd, ledRGB, buzzer, enableButton, IRsensor):
+        self.button = enableButton
+        self.IRsensor = IRsensor
+        
         self.intrudersCount = 0
         self.enableAlarm = False
         self.alarmRunning = False
-        self.wifiOK = False
+        self.sensorBusy = False
+        self.wifiOk = False
         self.MQTTOk = False
         
-        self.mqttClient = mqttClient
+        self.mqttClient = None
         self.dataCenter = alarmDataCenter
         
         self.lcd = lcd
@@ -35,34 +40,44 @@ class ControlCenter():
         onPinRise(IRsensor, self.intrusione, debounce = 500)
         onPinFall(IRsensor, self.stopAlarm, debounce = 500)
 
-    def startComm(self, wifiNetwork, wifiKey, broker, port = 1883, attempts = 5):
+    def linkAndStartComm(self, wifiNetwork, wifiKey, mqttClient, broker, port = 1883, attempts = 5):
+        self.lcd.lock.acquire()
+        
         for retry in range(attempts):
             try:
                 print("Attempting WiFi link...")
+                self.ledRGB.RGBset(R = 255, G = 255, B = 0)
+                self.ledRGB.quickBlink(R = 255, G = 255, B = 0)
+                self.lcd.printLine("Attempting WiFi\nconnection. [" + str(retry+1) + "]", clearPrevious = True)
                 wifi.link(wifiNetwork, wifi.WIFI_WPA2, wifiKey)
                 print("WiFi connection successful.")
                 break
             except Exception as e:
                 print("WiFi connection error: ", e)
                 if (retry == attempts-1):
-                    self.lcd.lock.acquire()
+                    
                     print("Too many errors. Not gonna try anymore.")
-                    self.lcd.clear()
                     self.lcd.writeCGRAM(chars.SAD_FACE, 7) #Temp buffer --> #SAD
-                    self.lcd.printLine("WiFi connection\nfailed. " + self.lcd.CGRAM[7])
-                    sleep(4000)
+                    self.buzzer.playSequence(music.failureTone, BPM = 140)
+                    self.ledRGB.RGBset(R = 255, G = 0, B = 0)
+                    self.lcd.printLine("WiFi connection\nfailed. "  + self.lcd.CGRAM[7] + "\nProceeding w/o\nconnectivity.", sentenceDelay = 1500, clearPrevious = True)
+                    sleep(2000)
                     self.lcd.clear()
                     self.lcd.lock.release()
                     return
                 sleep(500)
         
-        self.wifiOK = True
-        
+        self.wifiOk = True
+        self.ledRGB.RGBset(R = 0, G = 255, B = 0)
+        sleep(200)
         #try:
         for retry in range(attempts):
             try:
                 print("Attempting connection with broker")
-                self.mqttClient.connect(broker, port, keepalive = 30)
+                self.ledRGB.RGBset(R = 255, G = 255, B = 0)
+                self.ledRGB.quickBlink(R = 255, G = 255, B = 0)
+                self.lcd.printLine("Attempting MQTT\nconnection. [" + str(retry+1) + "]", clearPrevious = True)
+                mqttClient.connect(broker, port, keepalive = 30)
                 #self.mqttClient.connect("192.168.1.67", port=1886, keepalive = 30)
                 print("Connected with broker")
                 break
@@ -70,25 +85,31 @@ class ControlCenter():
                 print("MQTT connection error: " + str(e))
                 
                 if retry == attempts-1:
-                    self.lcd.lock.acquire()
                     print("Too many errors. Not gonna try anymore.")
-                    self.lcd.clear()
                     self.lcd.writeCGRAM(chars.SAD_FACE, 7) #Temp buffer --> #SAD
-                    self.lcd.printLine("MQTT connection\nfailed. " + self.lcd.CGRAM[7])
-                    sleep(4000)
+                    self.buzzer.playSequence(music.failureTone, BPM = 140)
+                    self.ledRGB.RGBset(R = 255, G = 0, B = 0)
+                    self.lcd.printLine("MQTT connection\nfailed. "  + self.lcd.CGRAM[7] + "\nProceeding w/o\nconnectivity.", clearPrevious = True)
+                    sleep(2000)
                     self.lcd.clear()
                     self.lcd.lock.release()
                     return
                 sleep(500)
+                
+        self.lcd.lock.release()
         
-        self.mqttClient.set_will(glob.topicRoot + '/#', str("Error"), 2, True)
-        self.mqttClient.loop()
         self.MQTTOk = True
+        mqttClient.set_will(glob.topicRoot + '/#', str("Error"), 2, True)
+        mqttClient.loop()
+        self.mqttClient = mqttClient
+        
+        self.ledRGB.RGBset(R = 0, G = 255, B = 0)
+        sleep(200)
         
         self.dataCenter.enableDataSend = True
-        self.mqttClient.publish(str(glob.topicRoot + '/' + enableAlarmKey), str(self.enableAlarm), 2, retain = True)
-        self.mqttClient.publish(str(glob.topicRoot + '/' + intruderKey), "No activity", 2)
-        self.mqttClient.publish(str(glob.topicRoot + '/' + intrudersCountKey), str(self.intrudersCount), 2, retain = True)
+        mqttClient.publish(str(glob.topicRoot + '/' + enableAlarmKey), str(self.enableAlarm), 2, retain = True)
+        mqttClient.publish(str(glob.topicRoot + '/' + intruderKey), "No activity", 2)
+        mqttClient.publish(str(glob.topicRoot + '/' + intrudersCountKey), str(self.intrudersCount), 2, retain = True)
 
     def toggleOnOff(self):
         if self.enableAlarm: #se è inizialmente attivo
@@ -110,22 +131,46 @@ class ControlCenter():
         
     def intrusione(self):
         self.dataCenter.continueFlag.clear()
+        self.sensorBusy = True
         self.lcd.lock.acquire()
         if self.enableAlarm:
             self.alarmRunning = True
             print("Intrusione!!!")
             self.intrudersCount += 1
-            self.mqttClient.publish(str(glob.topicRoot + '/' + intrudersCountKey), str(self.intrudersCount), 2, retain = True)
-            self.mqttClient.publish(str(glob.topicRoot + '/' + intruderKey), "Intruder!", 2, retain = True)
+            
+            if self.mqttClient is not None:
+                self.mqttClient.publish(str(glob.topicRoot + '/' + intrudersCountKey), str(self.intrudersCount), 2, retain = True)
+                self.mqttClient.publish(str(glob.topicRoot + '/' + intruderKey), "Intruder!", 2, retain = True)
+                
             self.buzzer.soundAlarm()
             self.ledRGB.flash(flashFrequency = 20, colorTuple = (255, 0, 0))
             self.lcd.printLine("!  Intruder  !", 1, align = "CENTER")
         else:
             print("Movimento rilevato... ma l'allarme non e' inserito")
+            
+            if self.mqttClient is not None:
+                self.mqttClient.publish(str(glob.topicRoot + '/' + intruderKey), "Sensor busy", 2)
+                
             self.lcd.printLine("Alarm busy...", 1, align = "CENTER")
         
         self.lcd.lock.release()
-        print("lock released")
+        #print("lcd lock released")
+    
+    def checkBusy(self):
+        if digitalRead(self.IRsensor) == HIGH and self.enableAlarm == False:
+            self.sensorBusy = True
+            self.dataCenter.continueFlag.clear()
+            self.lcd.lock.acquire()
+            
+            if self.mqttClient is not None:
+                self.mqttClient.publish(str(glob.topicRoot + '/' + intruderKey), "Sensor busy", 2)
+            
+            self.lcd.printLine("Alarm busy...", 1, align = "CENTER")
+            self.lcd.lock.release()
+        else:
+            self.sensorBusy = False
+            self.dataCenter.continueFlag.set()
+            self.displayStatus()
     
     def stopAlarm(self):
         if self.alarmRunning:
@@ -134,14 +179,19 @@ class ControlCenter():
             self.lcd.lock.acquire()
             self.lcd.clear()
             self.lcd.lock.release()
-            self.mqttClient.publish(str(glob.topicRoot + '/' + intruderKey), "No activity", 2)
+            
+            if self.mqttClient is not None:
+                self.mqttClient.publish(str(glob.topicRoot + '/' + intruderKey), "No activity", 2)
+                
             print("Alarm signal down...")
         
-        self.dataCenter.continueFlag.set()
+        self.checkBusy()
         self.alarmRunning = False
-        self.displayStatus()
-    
+
     def displayStatus(self):
+        if self.sensorBusy:
+            return
+        
         string = ""
         
         #if self.controlCenter.enableAlarm:
@@ -155,7 +205,7 @@ class ControlCenter():
         self.lcd.lock.acquire()
         self.lcd.writeCGRAM(chars.MQTT, 7) #this acts as a temp buffer
         
-        if self.wifiOK:
+        if self.wifiOk:
             self.lcd.writeCGRAM(chars.WIFI, 6)
         else:
             self.lcd.writeCGRAM(chars.NO_SIGNAL, 6) 

@@ -55,6 +55,7 @@ class UserSettings():
             self.flashMem[memmap.USER_PASSWORD_OFFSET+x] = int(pw[x])
     
         self.flashMem.flush()
+        sleep(500)
         print("PW written to memory.")
         
     def passwordScreen(self):
@@ -66,12 +67,12 @@ class UserSettings():
             self.lcd.printLine("B=Backsp  D=Done", row = 1)
             self.lcd.returnHome()
             self.lcd.print("  PW: ")
-            self.lcd.cursorConfig(True, True, True) #Imposta il cursore lampeggiante
-            self.lcd.flashDisplay(2, 70)
+            self.lcd.cursorConfig(True, True, True) #Imposta il cursore lampeggiante)
         
             inputStartPos = self.lcd.cursorPos[0]    #Memorizza la posizione iniziale di inserimento
             val = ''                            #BUFFER ultimo tasto premuto
-        
+            self.lcd.flashDisplay(2, 150)
+            
             while(val != 'D'):
                 val = self.keypad.scan()
                 posInPassword = self.lcd.cursorPos[0] - inputStartPos
