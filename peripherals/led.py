@@ -18,7 +18,6 @@ class RGBLed:
     def __init__(self, Rpin, Gpin, Bpin):
         self.cur = [0, 0, 0]
         self.mem = [0, 0, 0]
-        self.lock = threading.Lock()
         
         self.mqttClient = None #da linkare in un secondo momento, per eventualmente abilitare la funzionalità di send
         self.topicName = ""

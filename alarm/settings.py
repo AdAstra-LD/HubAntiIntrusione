@@ -2,13 +2,24 @@ import peripherals.keypad as pad
 import peripherals.specialChars as chars
 
 import memory.custom_flash as flash
-import memory.memorymap as memmap
 import utilities.cMath as cMath
 import utilities.music as music
+
+###MEMORY MAP###
+ESP32_BASEADDR = 0x00310000
+
+SETUP_INFO_OFFSET = 0
+PASSWORD_LENGTH_OFFSET = 1
+USER_PASSWORD_OFFSET = 2
+
+SETUP_INFO_ADDR = ESP32_BASEADDR + SETUP_INFO_OFFSET
+PASSWORD_LENGTH_ADDR = ESP32_BASEADDR + PASSWORD_LENGTH_OFFSET 
+USER_PASSWORD_ADDR = ESP32_BASEADDR + USER_PASSWORD_OFFSET
 
 SYSTEM_UNINITIALIZED = 0
 SYSTEM_UNPROTECTED = 1
 SYSTEM_PROTECTED = 2
+################
 
 class UserSettings():
     def __init__(self, lcd, keypad, ledRGB, buzz, pwMaxLen = 8):
@@ -18,15 +29,13 @@ class UserSettings():
         self.buzzer = buzz
         
         self.PASSWORD_MAXLEN = min(8, pwMaxLen)
-        self.flash_size = memmap.USER_PASSWORD_OFFSET + self.PASSWORD_MAXLEN
-        self.flashMem = flash.FlashFileStream(memmap.ESP32_BASEADDR, self.flash_size)
-        self.systemStatus = self.flashMem[memmap.SETUP_INFO_OFFSET]
-        self.pw = []
-        self.readPw()
+        self.flash_size = USER_PASSWORD_OFFSET + self.PASSWORD_MAXLEN
+        self.flashMem = flash.FlashFileStream(ESP32_BASEADDR, self.flash_size)
+        self.systemStatus = self.flashMem[SETUP_INFO_OFFSET]
+        self.pw = self.readPw()
         
-        print(self.pw)
         ############################################
-        #print(str(self.flashMem[memmap.SETUP_INFO_OFFSET]))
+        #print(str(self.flashMem[SETUP_INFO_OFFSET]))
         
         if self.systemStatus != SYSTEM_UNPROTECTED and self.systemStatus != SYSTEM_PROTECTED:
             self.systemStatus = SYSTEM_UNINITIALIZED
@@ -38,18 +47,15 @@ class UserSettings():
     def readPw(self):
         self.pw = []
         if self.systemStatus == SYSTEM_PROTECTED:
-            pwLen = self.flashMem[memmap.PASSWORD_LENGTH_OFFSET]
+            pwLen = self.flashMem[PASSWORD_LENGTH_OFFSET]
             
-            self.flashMem.move_cursor(memmap.USER_PASSWORD_OFFSET)
-            self.pw = self.flashMem.read_bytes(pwLen)
-            
-            for x in self.pw:
-                print(str(x))
+            self.flashMem.move_cursor(USER_PASSWORD_OFFSET)
+            return self.flashMem.read_bytes(pwLen)
         
     
     def userSetup(self):
         self.lcd.writeCGRAM(chars.SMILEY_FACE, 7) #Temp buffer --> #SmileyFace
-        self.lcd.printLine("Welcome! " + self.lcd.CGRAM[7], delay = 20, align = "C", clearPrevious = True)
+        self.lcd.printLine("Welcome! " + self.lcd.CGRAM[7], delay = 20, align = "C")
         self.buzzer.playSequence(music.welcomeTone, BPM = 265)
         sleep(1500)
         
@@ -65,19 +71,55 @@ class UserSettings():
         #print("its length is: " + str(pwlen))
         
         if pwlen > 0:         
-            self.flashMem[memmap.SETUP_INFO_OFFSET] = SYSTEM_PROTECTED
+            self.systemStatus = SYSTEM_PROTECTED
         else:
-            self.flashMem[memmap.SETUP_INFO_OFFSET] = SYSTEM_UNPROTECTED
+            self.systemStatus = SYSTEM_UNPROTECTED
             self.lcd.printLine("You can always\nset one later.")
         
-        self.flashMem[memmap.PASSWORD_LENGTH_OFFSET] = pwlen
-        for x in range(pwlen):
-            self.flashMem[memmap.USER_PASSWORD_OFFSET+x] = int(self.pw[x])
+        self.flashMem[SETUP_INFO_OFFSET] = self.systemStatus
+        self.flashMem[PASSWORD_LENGTH_OFFSET] = pwlen
+        for x in range(pwlen):  
+            self.flashMem[USER_PASSWORD_OFFSET+x] = int(self.pw[x])
     
         self.flashMem.flush()
         sleep(500)
         print("PW written to memory.")
+    
+    def resetAll(self):
+        self.lcd.printLine("Hard reset?", delay = 100)
+        self.lcd.print("1=Y  0=N", row = 1, align = 'RIGHT')
+        val = self.keypad.scan(('1', '0'))
+                    
+        if val == '1':
+            self.ledRGB.RGBset(255, 255, 0)
+            self.lcd.printLine("Absolutely sure?", delay = 100)
+            self.buzzer.playSequence(music.warningTone, BPM = 140, duty = 50)
+            sleep(500)
+            self.lcd.print("0=Y  1=N", row = 1, align = 'RIGHT')
+            self.ledRGB.quickBlink(R=255, G=0, B=0)
+            self.ledRGB.RGBset(255, 0, 0)
+            
+            val = self.keypad.scan(('1', '0'))
+            
+            if val == '0':
+                self.ledRGB.RGBset(255, 255, 255)
+                self.flashMem.erase(0, self.flash_size, immediate = True)
+                
+                self.lcd.printLine("Confirmed.", delay = 50)
+                self.ledRGB.quickBlink(colorTuple = (0, 255, 0))
+                self.ledRGB.RGBset(colorTuple = (0, 255, 0))
+                self.buzzer.playSequence(music.successTone, BPM = 210, duty = 50)
+                sleep(500)
+                self.lcd.printLine("Please restart\nthe alarm system")
+                
+                while True:
+                    sleep(10000)
         
+        self.lcd.printLine("Discarded.", delay = 0)
+        sleep(1500)
+        return
+
+
     def passwordScreen(self, toCompare = [], discardable = True):
         while True:
             temp_pw = []                       #inizializza lista vuota per contenere la temp_pw
@@ -129,7 +171,7 @@ class UserSettings():
             if len(temp_pw) == 0:
                 if discardable and toCompare == []:
                     self.lcd.printLine("Proceed with no\npword?")
-                    self.lcd.print("1=Y  0=N", row = 1, align = 'CENTER')
+                    self.lcd.print("1=Y  0=N", row = 1, align = 'RIGHT')
                     
                     val = self.keypad.scan(('1', '0'))
                     
@@ -147,11 +189,12 @@ class UserSettings():
                         temp_pw = []
                 elif discardable and toCompare != []:
                     self.lcd.printLine("Discard?")
-                    self.lcd.print("1=Y  0=N", row = 1, align = 'CENTER')
+                    self.lcd.print("1=Y  0=N", row = 1, align = 'RIGHT')
                     
                     val = self.keypad.scan(('1', '0'))
                     
                     if val == '1':
+                        self.lcd.clear()
                         return False
                     else:
                         print("Retrying...")
@@ -161,14 +204,12 @@ class UserSettings():
                     self.buzzer.playSequence(music.waitTone, BPM = 240)
             else:
                 self.lcd.printLine("Confirm " + str("".join(temp_pw)))
-                self.lcd.print("1=Yes  0=Retry", row = 1, align = 'CENTER')
+                self.lcd.print("1=Yes  0=Retry", row = 1, align = 'RIGHT')
                 
                 self.lcd.moveCursor(self.lcd.nCols-1, self.lcd.nRows-1)
                 val = self.keypad.scan(('1', '0'))
                 
                 if val == '1':
-                    print(temp_pw)
-                    print(toCompare)
                     if toCompare == []:
                         self.ledRGB.RGBset(0, 255, 0)
                         self.lcd.printLine("Pword confirmed.")

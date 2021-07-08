@@ -8,6 +8,7 @@ import peripherals.specialChars as chars
 class DataCenter():
     def __init__(self, htu21d, pinPhotoresistor, lcd, decimalTemperature = 0, decimalHumidity = 0, decimalLight = 0):
         self.mqttClient = None
+        self.mqttLock = None
         
         self.enableDataRetrieval = True
         self.enableDataSend = False
@@ -20,8 +21,6 @@ class DataCenter():
         self.htu21d = htu21d
         self.photoresistor = pinPhotoresistor
         self.lcd = lcd
-        
-        self.sensoreStorageLock = threading.Lock()
         
         self.sensorStorage = { 
             glob.temperatureKey : 0.0,
@@ -53,6 +52,10 @@ class DataCenter():
             glob.lightKey : (0, 0)
         }
     
+    def linkMQTTClient(self, client, lock):
+        self.mqttClient = client
+        self.mqttLock = lock
+    
     def startRetrieveData(self, refreshTime, nonBlocking = False):
         if self.dataRetrievalRunning:
             print("Data retrieval already running...")
@@ -67,6 +70,7 @@ class DataCenter():
     
     def _bodyRetrieveData(self, refreshTime):
         self.dataRetrievalRunning = True
+        
         while self.enableDataRetrieval:
             self.continueFlag.wait()
             
@@ -98,13 +102,15 @@ class DataCenter():
             
             if self.enableDataSend and self.mqttClient is not None:
                 try:
-                    self.mqttClient.publish(str(glob.topicRoot + '/' + glob.temperatureKey), str(t), 1) 
-                    self.mqttClient.publish(str(glob.topicRoot + '/' + glob.humidityKey), str(h), 1)
-                    self.mqttClient.publish(str(glob.topicRoot + '/' + glob.lightKey), str(l), 1) 
+                    self.mqttLock.acquire()
+                    self.mqttClient.publish(str(glob.topicRoot + '/' + glob.temperatureKey), str(t), 0) 
+                    self.mqttClient.publish(str(glob.topicRoot + '/' + glob.humidityKey), str(h), 0)
+                    self.mqttClient.publish(str(glob.topicRoot + '/' + glob.lightKey), str(l), 0) 
                     
-                    self.mqttClient.publish(str(glob.topicRoot + '/H' + glob.temperatureKey), str(self.sensorHistory[glob.temperatureKey]), 1) 
-                    self.mqttClient.publish(str(glob.topicRoot + '/H' + glob.humidityKey), str(self.sensorHistory[glob.humidityKey]), 1) 
-                    self.mqttClient.publish(str(glob.topicRoot + '/H' + glob.lightKey), str(self.sensorHistory[glob.lightKey]), 1) 
+                    self.mqttClient.publish(str(glob.topicRoot + '/H' + glob.temperatureKey), str(self.sensorHistory[glob.temperatureKey]), 0) 
+                    self.mqttClient.publish(str(glob.topicRoot + '/H' + glob.humidityKey), str(self.sensorHistory[glob.humidityKey]), 0) 
+                    self.mqttClient.publish(str(glob.topicRoot + '/H' + glob.lightKey), str(self.sensorHistory[glob.lightKey]), 0) 
+                    self.mqttLock.release()
                 except Exception as e:
                     print("Error" + str(e))
                     sleep(100)

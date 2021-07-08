@@ -1,11 +1,5 @@
 def ceil(n):
     return -int((-n) // 1)
-
-def max(n1, n2):
-    if (n1 > n2):
-        return n1
-        
-    return n2
     
 def isNumber(s):
     if s == None:
@@ -19,7 +13,7 @@ def isNumber(s):
         
 def exp(b, e):
     if e > 0:
-        for x in range(e):
+        for x in range(e-1):
             b = b*b
     elif e == 0:
         return 1

@@ -4,8 +4,6 @@ humidityKey = 'humidity'
 lightKey = 'light'
 
 topicRoot = 'roomIOT2021'
-#Peripherals
-photoresistor = None
 
 #Utilities
 

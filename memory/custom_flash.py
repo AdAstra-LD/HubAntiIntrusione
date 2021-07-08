@@ -186,6 +186,9 @@ The FlashFileStream class
             self.bb[startAddr] = 0
             self.curpos+=1
             
+        if immediate:
+            self.flush()
+            
     def move_cursor(self, address):
         """
 .. method:: move_cursor()
