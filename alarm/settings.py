@@ -59,7 +59,7 @@ class UserSettings():
         self.buzzer.playSequence(music.welcomeTone, BPM = 265)
         sleep(1500)
         
-        self.lcd.printLine("There are a few\nthings to set up")
+        self.lcd.printLine("There are a few\nthings to set up.")
         sleep(1500)
         
         self.lcd.printLine("Please choose a\npassword for the\nalarm system.")
@@ -110,7 +110,7 @@ class UserSettings():
                 self.ledRGB.RGBset(colorTuple = (0, 255, 0))
                 self.buzzer.playSequence(music.successTone, BPM = 210, duty = 50)
                 sleep(500)
-                self.lcd.printLine("Please restart\nthe alarm system")
+                self.lcd.printLine("Please restart\nthe alarm system.")
                 
                 while True:
                     sleep(10000)

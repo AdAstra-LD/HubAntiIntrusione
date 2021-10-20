@@ -349,7 +349,7 @@ class LCDI2C():
         strLen = len(byteArrayString)
         
         if row is not None:
-            self.moveCursor(self.cursorPos[0], row)
+            self.moveCursor(self.cursorPos[0], row%self.nRows)
         
         #### DO NOT CHANGE ORDER OF ADDITION ####
         if align is not None:
@@ -391,6 +391,10 @@ class LCDI2C():
         #text:              bytes o stringa da stampare
         #delay:             delay tra la stampa di un char e l'altra
         #align:     could be 'LEFT' | 'L' (default), 'RIGHT' | 'R' or 'CENTER' | 'CENTRE' | 'C'
+        
+        #NOTE:  può essere migliorata aggiungendo un controllo sulla lunghezza della prossima parola e,
+        #       se più lunga dello spazio rimasto sulla riga, stamparla a capo. (auto word-wrap)
+        
         if self.i2cport is None:
             return
         
@@ -400,7 +404,11 @@ class LCDI2C():
         currentLine = ""
         whitespaceCount = 0
         for r in range (numRowsToPrint):
-            #sleep(500)
+            currentLine = rowsToPrint[r]
+            strLen = len(currentLine)
+            if (strLen < 2 && currentLine[0] != '\n'):
+                continue
+            
             if r % self.nRows == 0:
                 if r != 0 and numRowsToPrint >= self.nRows:
                     #__builtins__.print("Sleeping sentenceDelay")
@@ -408,13 +416,10 @@ class LCDI2C():
                     
                 if clearPrevious:
                     self.clear()
-                
-            currentLine = rowsToPrint[r]
-            strLen = len(currentLine)
             
             whitespaceCount = self.nCols - strLen
-            #__builtins__.print("currentLine = " + currentLine)
-            #__builtins__.print("la stringa da stampare è lunga " + str(len(currentLine)))
+            #__builtins__.print( "currentLine = " + currentLine )
+            #__builtins__.print( "la stringa da stampare è lunga " + str(strLen) )
             
             if align is not None:
                 align = align.upper()
@@ -435,8 +440,8 @@ class LCDI2C():
         if align == 'LEFT' or align == 'L':
             cursorX = self.nCols - 1 - (len(currentLine) % self.nCols)
         else:
-            #__builtins__.print(currentLine)
             cursorX = (len(currentLine.strip()) + whitespaceCount//2) % self.nCols
+            #__builtins__.print(currentLine)
         
         
         cursorY = (numRowsToPrint-1) % self.nRows
